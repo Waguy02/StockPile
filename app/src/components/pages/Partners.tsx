@@ -14,7 +14,7 @@ import { AddPartnerDialog } from '../modals/AddPartnerDialog';
 
 export function Partners() {
   const { providers, customers, isLoading } = useStore();
-  const [isAddPartnerOpen, setIsAddPartnerOpen] = useState(false);
+  const [activeModal, setActiveModal] = useState<'provider' | 'customer' | null>(null);
 
   if (isLoading) {
     return (
@@ -31,18 +31,13 @@ export function Partners() {
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Partners</h1>
           <p className="text-slate-500 mt-2 text-sm font-medium">Manage your relationships with providers and customers.</p>
         </div>
-        <div className="flex space-x-3">
-          <button 
-            onClick={() => setIsAddPartnerOpen(true)}
-            className="flex items-center px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium text-sm shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Partner
-          </button>
-        </div>
       </div>
       
-      <AddPartnerDialog open={isAddPartnerOpen} onOpenChange={setIsAddPartnerOpen} type="provider" />
+      <AddPartnerDialog 
+        open={!!activeModal} 
+        onOpenChange={(open) => !open && setActiveModal(null)} 
+        type={activeModal || 'provider'} 
+      />
 
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-12rem)] min-h-[500px]">
@@ -55,9 +50,18 @@ export function Partners() {
               </div>
               <h2 className="font-bold text-slate-800">Providers</h2>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 shadow-sm">
-              {providers.length} Total
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 shadow-sm">
+                {providers.length} Total
+              </span>
+              <button 
+                onClick={() => setActiveModal('provider')}
+                className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-xs shadow-sm transition-all"
+              >
+                <Plus className="w-3 h-3 mr-1.5" />
+                Add Provider
+              </button>
+            </div>
           </div>
           
           <div className="p-4 border-b border-slate-100">
@@ -114,9 +118,18 @@ export function Partners() {
               </div>
               <h2 className="font-bold text-slate-800">Customers</h2>
             </div>
-             <span className="text-xs font-semibold px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 shadow-sm">
-              {customers.length} Total
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 shadow-sm">
+                {customers.length} Total
+              </span>
+              <button 
+                onClick={() => setActiveModal('customer')}
+                className="flex items-center px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium text-xs shadow-sm transition-all"
+              >
+                <Plus className="w-3 h-3 mr-1.5" />
+                Add Customer
+              </button>
+            </div>
           </div>
 
            <div className="p-4 border-b border-slate-100">
