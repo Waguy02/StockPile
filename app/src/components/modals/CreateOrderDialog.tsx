@@ -43,6 +43,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
     defaultValues: {
       partnerId: '',
       totalAmount: '0',
+      amountPaid: '0',
       status: 'draft',
       notes: '',
       items: [] as { productId: string; quantity: string; unitPrice: string }[],
@@ -75,6 +76,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
         form.reset({
             partnerId: type === 'purchase' ? (order.providerId || '') : (order.customerId || ''),
             totalAmount: order.totalAmount?.toString() || '0',
+            amountPaid: order.amountPaid?.toString() || '0',
             status: order.status || 'draft',
             notes: order.notes || '',
             items: order.items?.map((i: any) => ({
@@ -87,7 +89,9 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
         form.reset({
             partnerId: '',
             totalAmount: '0',
-            status: 'draft',
+            amountPaid: '0',
+            amountPaid: '0',
+      status: 'draft',
             notes: '',
             items: [],
         });
@@ -100,11 +104,16 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
   const onSubmit = async (data: any) => {
     setIsLoading(true);
     try {
-        if (order && order.status === 'completed') {
-            toast.error("Completed orders cannot be modified");
-            setIsLoading(false);
-            return;
+        if (order && order.status === 'completed' && data.status !== 'completed') {
+             toast.error("Cannot change status of a completed order");
+             setIsLoading(false);
+             return;
         }
+
+        // Allow updates to payment for completed orders, but prevent other critical changes if needed.
+        // For now, we rely on the backend/logic to handle what's safe. 
+        // We will just enforce that if it WAS completed, it MUST STAY completed.
+        // And if it is completed, we don't re-add stock (logic below handles this by checking status change).
 
         if (!data.partnerId) {
              toast.error(`Please select a ${type === 'purchase' ? 'provider' : 'customer'}`);
@@ -114,6 +123,8 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
 
         const payload = {
             totalAmount: Number(data.totalAmount),
+            amountPaid: Number(data.amountPaid),
+            paymentStatus: Number(data.amountPaid) >= Number(data.totalAmount),
             status: data.status,
             notes: data.notes,
             initiationDate: order?.initiationDate || new Date().toISOString().split('T')[0],
@@ -160,10 +171,9 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                 });
                 toast.success("Purchase order updated");
             } else {
-                const newPO = await api.createPO({
+                await api.createPO({
                     ...payload,
                     providerId: data.partnerId,
-                    paymentStatus: false
                 });
 
                 // If created directly as completed
@@ -199,7 +209,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                 await api.createSale({
                     ...payload,
                     customerId: data.partnerId,
-                    amountPaid: 0
+                    amountPaid: Number(data.amountPaid)
                 });
                 toast.success("Sale order created");
             }
@@ -359,11 +369,29 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
 
             <FormField
               control={form.control}
+              name="amountPaid"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount Paid ($)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="status"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                    disabled={order?.status === 'completed'}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select status" />

@@ -163,7 +163,6 @@ export function Procurement() {
                          <DropdownMenuItem 
                           className="cursor-pointer" 
                           onClick={() => handleEditOrder(po)}
-                          disabled={po.status === 'completed'}
                         >
                             <Edit className="w-4 h-4 mr-2" />
                             Edit
