@@ -72,7 +72,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
   React.useEffect(() => {
     if (order) {
         form.reset({
-            partnerId: type === 'purchase' ? order.providerId : order.customerId,
+            partnerId: type === 'purchase' ? (order.providerId || '') : (order.customerId || ''),
             totalAmount: order.totalAmount?.toString() || '0',
             status: order.status || 'draft',
             notes: order.notes || '',
@@ -95,9 +95,15 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
 
   const [isLoading, setIsLoading] = React.useState(false);
 
+
   const onSubmit = async (data: any) => {
     setIsLoading(true);
     try {
+        if (!data.partnerId) {
+             console.error("Missing partner ID");
+             return; // Prevent submission without partner
+        }
+
         const payload = {
             totalAmount: Number(data.totalAmount),
             status: data.status,
@@ -117,14 +123,20 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                     // Create stock batches for each item
                     for (const item of payload.items) {
                         if (item.productId && item.quantity > 0) {
-                            await api.createBatch({
-                                productId: item.productId,
-                                quantity: item.quantity,
-                                unitPriceCost: item.unitPrice,
-                                batchLabel: `PO-${order.id.slice(0, 8)}`,
-                                entryDate: new Date().toISOString().split('T')[0],
-                                status: 'active'
-                            });
+                            try {
+                                await api.createBatch({
+                                    productId: item.productId,
+                                    quantity: item.quantity,
+                                    unitPriceCost: item.unitPrice,
+                                    batchLabel: `PO-${order.id.slice(0, 8)}`,
+                                    entryDate: new Date().toISOString().split('T')[0],
+                                    status: 'active'
+                                });
+                            } catch (err) {
+                                console.error("Failed to create batch for item", item, err);
+                                // Continue to next item or fail? 
+                                // Ideally we should probably proceed but warn.
+                            }
                         }
                     }
                 }
@@ -141,18 +153,22 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                     paymentStatus: false
                 });
 
-                // If created directly as completed (unlikely but possible)
+                // If created directly as completed
                 if (data.status === 'completed') {
                     for (const item of payload.items) {
                         if (item.productId && item.quantity > 0) {
-                            await api.createBatch({
-                                productId: item.productId,
-                                quantity: item.quantity,
-                                unitPriceCost: item.unitPrice,
-                                batchLabel: `PO-${newPO.id.slice(0, 8)}`,
-                                entryDate: new Date().toISOString().split('T')[0],
-                                status: 'active'
-                            });
+                             try {
+                                await api.createBatch({
+                                    productId: item.productId,
+                                    quantity: item.quantity,
+                                    unitPriceCost: item.unitPrice,
+                                    batchLabel: `PO-${newPO.id.slice(0, 8)}`,
+                                    entryDate: new Date().toISOString().split('T')[0],
+                                    status: 'active'
+                                });
+                            } catch (err) {
+                                console.error("Failed to create batch", err);
+                            }
                         }
                     }
                 }
