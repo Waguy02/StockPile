@@ -7,17 +7,46 @@ import {
   UserCircle,
   Loader2,
   Calendar,
-  CreditCard
+  CreditCard,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
 import { CreateOrderDialog } from '../modals/CreateOrderDialog';
+import { api } from '../../lib/api';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 
 export function Sales() {
-  const { sales, customers, managers, isLoading } = useStore();
+  const { sales, customers, managers, isLoading, refresh } = useStore();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingSale, setEditingSale] = useState<any>(null);
 
   const getCustomerName = (id: string) => customers.find(c => c.id === id)?.name || 'Unknown Customer';
   const getManagerName = (id: string) => managers.find(m => m.id === id)?.name || 'Unknown Manager';
+
+  const handleEditSale = (sale: any) => {
+    setEditingSale(sale);
+    setIsCreateOpen(true);
+  };
+
+  const handleDeleteSale = async (id: string) => {
+    if (confirm('Are you sure you want to delete this sale?')) {
+        await api.deleteSale(id);
+        await refresh();
+    }
+  };
+
+  const handleCloseDialog = (open: boolean) => {
+      setIsCreateOpen(open);
+      if (!open) {
+          setEditingSale(null);
+      }
+  };
 
   if (isLoading) {
     return (
@@ -43,7 +72,12 @@ export function Sales() {
         </button>
       </div>
 
-      <CreateOrderDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} type="sale" />
+      <CreateOrderDialog 
+        open={isCreateOpen} 
+        onOpenChange={handleCloseDialog} 
+        type="sale" 
+        order={editingSale}
+      />
 
       <div className="bg-white rounded-2xl border border-slate-200/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden">
         <div className="p-5 bg-slate-50/50 flex flex-col sm:flex-row gap-4 justify-between items-center border-b border-slate-100">
@@ -125,9 +159,23 @@ export function Sales() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
-                        <MoreHorizontal className="w-5 h-5" />
-                      </button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                            <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                                <MoreHorizontal className="w-5 h-5" />
+                            </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem className="cursor-pointer" onClick={() => handleEditSale(sale)}>
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteSale(sale.id)}>
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </td>
                   </tr>
                 );

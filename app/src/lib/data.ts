@@ -48,6 +48,12 @@ export type Customer = {
   status: 'active' | 'inactive';
 };
 
+export type OrderItem = {
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+};
+
 export type PurchaseOrder = {
   id: string;
   providerId: string;
@@ -56,6 +62,8 @@ export type PurchaseOrder = {
   finalizationDate?: string;
   totalAmount: number;
   paymentStatus: boolean;
+  notes?: string;
+  items?: OrderItem[];
   status: 'draft' | 'pending' | 'completed' | 'cancelled';
 };
 
@@ -66,7 +74,9 @@ export type Sale = {
   initiationDate: string;
   totalAmount: number;
   amountPaid: number;
-  status: 'draft' | 'pending' | 'completed';
+  notes?: string;
+  items?: OrderItem[];
+  status: 'draft' | 'pending' | 'completed' | 'cancelled'; // Consistency with PO for cancelled
 };
 
 export type Payment = {

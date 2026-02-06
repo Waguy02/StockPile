@@ -7,18 +7,52 @@ import {
   PackageOpen,
   Tag,
   Loader2,
-  ListFilter
+  ListFilter,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
 import { AddProductDialog } from '../modals/AddProductDialog';
 import { CategoriesDialog } from '../modals/CategoriesDialog';
+import { api } from '../../lib/api';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 
 export function Inventory() {
-  const { products, categories, stockBatches, isLoading } = useStore();
+  const { products, categories, stockBatches, isLoading, refresh } = useStore();
   const [activeTab, setActiveTab] = useState<'products' | 'batches'>('products');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+
+  const handleEditProduct = (product: any) => {
+      setEditingProduct(product);
+      setIsAddProductOpen(true);
+  };
+
+  const handleCloseProductDialog = (open: boolean) => {
+      setIsAddProductOpen(open);
+      if (!open) setEditingProduct(null);
+  }
+  
+  const handleDeleteProduct = async (id: string) => {
+    if (confirm('Are you sure you want to delete this product?')) {
+        await api.deleteProduct(id);
+        await refresh();
+    }
+  };
+
+  const handleDeleteBatch = async (id: string) => {
+    if (confirm('Are you sure you want to delete this batch?')) {
+        await api.deleteBatch(id);
+        await refresh();
+    }
+  };
 
   if (isLoading) {
     return (
@@ -53,7 +87,11 @@ export function Inventory() {
         </div>
       </div>
       
-      <AddProductDialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen} />
+      <AddProductDialog 
+        open={isAddProductOpen} 
+        onOpenChange={handleCloseProductDialog} 
+        product={editingProduct}
+      />
       <CategoriesDialog open={isCategoriesOpen} onOpenChange={setIsCategoriesOpen} />
 
       <div className="bg-white rounded-2xl border border-slate-200/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden">
@@ -111,9 +149,16 @@ export function Inventory() {
         {/* Table Content */}
         <div className="overflow-x-auto min-h-[400px]">
           {activeTab === 'products' ? (
-            <ProductsTable searchTerm={searchTerm} />
+            <ProductsTable 
+                searchTerm={searchTerm} 
+                onEdit={handleEditProduct} 
+                onDelete={handleDeleteProduct} 
+            />
           ) : (
-            <BatchesTable searchTerm={searchTerm} />
+            <BatchesTable 
+                searchTerm={searchTerm} 
+                onDelete={handleDeleteBatch}
+            />
           )}
         </div>
         
@@ -130,7 +175,7 @@ export function Inventory() {
   );
 }
 
-function ProductsTable({ searchTerm }: { searchTerm: string }) {
+function ProductsTable({ searchTerm, onEdit, onDelete }: { searchTerm: string, onEdit: (p: any) => void, onDelete: (id: string) => void }) {
   const { products, categories, stockBatches } = useStore();
   
   const filteredProducts = products.filter(p => 
@@ -195,9 +240,23 @@ function ProductsTable({ searchTerm }: { searchTerm: string }) {
                 </span>
               </td>
               <td className="px-6 py-4 text-right">
-                <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
-                  <MoreHorizontal className="w-5 h-5" />
-                </button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                        <MoreHorizontal className="w-5 h-5" />
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem className="cursor-pointer" onClick={() => onEdit(product)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => onDelete(product.id)}>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
               </td>
             </tr>
           );
@@ -207,7 +266,7 @@ function ProductsTable({ searchTerm }: { searchTerm: string }) {
   );
 }
 
-function BatchesTable({ searchTerm }: { searchTerm: string }) {
+function BatchesTable({ searchTerm, onDelete }: { searchTerm: string, onDelete: (id: string) => void }) {
   const { stockBatches, products } = useStore();
   
   const filteredBatches = stockBatches.filter(b => 
@@ -259,9 +318,19 @@ function BatchesTable({ searchTerm }: { searchTerm: string }) {
                 </div>
             </td>
             <td className="px-6 py-4 text-right">
-              <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
-                <MoreHorizontal className="w-5 h-5" />
-              </button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                        <MoreHorizontal className="w-5 h-5" />
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                         <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => onDelete(batch.id)}>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </td>
           </tr>
         ))}

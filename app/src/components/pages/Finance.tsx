@@ -6,13 +6,28 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Download,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
+import { api } from '../../lib/api';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 
 export function Finance() {
-  const { payments, managers, isLoading } = useStore();
+  const { payments, managers, isLoading, refresh } = useStore();
   const getManagerName = (id: string) => managers.find(m => m.id === id)?.name || 'Unknown';
+
+  const handleDeletePayment = async (id: string) => {
+    if (confirm('Are you sure you want to delete this payment record?')) {
+        await api.deletePayment(id);
+        await refresh();
+    }
+  };
 
   const totalInflow = payments.filter(p => p.referenceType === 'sale').reduce((acc, p) => acc + p.amount, 0);
   const totalOutflow = payments.filter(p => p.referenceType === 'purchase_order').reduce((acc, p) => acc + p.amount, 0);
@@ -120,9 +135,19 @@ export function Finance() {
                     {payment.referenceType === 'sale' ? '+' : '-'}${payment.amount.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </button>
+                    <DropdownMenu>
+                       <DropdownMenuTrigger asChild>
+                            <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                                <MoreHorizontal className="w-5 h-5" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeletePayment(payment.id)}>
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               ))}

@@ -33,9 +33,10 @@ import { api } from '../../lib/api';
 interface AddProductDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  product?: any;
 }
 
-export function AddProductDialog({ open, onOpenChange }: AddProductDialogProps) {
+export function AddProductDialog({ open, onOpenChange, product }: AddProductDialogProps) {
   const { categories, refresh } = useStore();
   const form = useForm({
     defaultValues: {
@@ -46,23 +47,49 @@ export function AddProductDialog({ open, onOpenChange }: AddProductDialogProps) 
     }
   });
 
+  React.useEffect(() => {
+    if (product) {
+      form.reset({
+        name: product.name,
+        description: product.description || '',
+        categoryId: product.categoryId,
+        baseUnitPrice: product.baseUnitPrice,
+      });
+    } else {
+      form.reset({
+        name: '',
+        description: '',
+        categoryId: '',
+        baseUnitPrice: 0,
+      });
+    }
+  }, [product, form]);
+
   const [isLoading, setIsLoading] = React.useState(false);
 
   const onSubmit = async (data: any) => {
     setIsLoading(true);
     try {
-        // Find category slug or just use it as is if backend handles it
-        const category = categories.find(c => c.id === data.categoryId);
-        await api.createProduct({
+        if (product) {
+           await api.updateProduct(product.id, {
+            ...product,
             ...data,
             categoryId: data.categoryId,
             baseUnitPrice: Number(data.baseUnitPrice)
-        });
+           });
+        } else {
+           await api.createProduct({
+            ...data,
+            categoryId: data.categoryId,
+            baseUnitPrice: Number(data.baseUnitPrice)
+           });
+        }
+        
         await refresh();
         onOpenChange(false);
         form.reset();
     } catch (error) {
-        console.error('Failed to create product', error);
+        console.error('Failed to save product', error);
     } finally {
         setIsLoading(false);
     }
@@ -72,9 +99,9 @@ export function AddProductDialog({ open, onOpenChange }: AddProductDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Product</DialogTitle>
+          <DialogTitle>{product ? 'Edit' : 'Add New'} Product</DialogTitle>
           <DialogDescription>
-            Create a new product record in your catalog.
+             {product ? 'Update details for this' : 'Create a new'} product record in your catalog.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

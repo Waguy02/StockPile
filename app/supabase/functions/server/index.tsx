@@ -58,12 +58,40 @@ app.post(`${BASE_PATH}/inventory/product`, async (c) => {
   return c.json(product);
 });
 
+app.put(`${BASE_PATH}/inventory/product/:id`, async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const product = { ...body, id };
+  await kv.set(`product:${id}`, product);
+  return c.json(product);
+});
+
+app.delete(`${BASE_PATH}/inventory/product/:id`, async (c) => {
+  const id = c.req.param("id");
+  await kv.del(`product:${id}`);
+  return c.json({ success: true });
+});
+
 app.post(`${BASE_PATH}/inventory/batch`, async (c) => {
   const body = await c.req.json();
   const id = body.id || crypto.randomUUID();
   const batch = { ...body, id };
   await kv.set(`batch:${id}`, batch);
   return c.json(batch);
+});
+
+app.put(`${BASE_PATH}/inventory/batch/:id`, async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const batch = { ...body, id };
+  await kv.set(`batch:${id}`, batch);
+  return c.json(batch);
+});
+
+app.delete(`${BASE_PATH}/inventory/batch/:id`, async (c) => {
+  const id = c.req.param("id");
+  await kv.del(`batch:${id}`);
+  return c.json({ success: true });
 });
 
 app.post(`${BASE_PATH}/inventory/category`, async (c) => {
@@ -91,12 +119,40 @@ app.post(`${BASE_PATH}/partners/provider`, async (c) => {
   return c.json(provider);
 });
 
+app.put(`${BASE_PATH}/partners/provider/:id`, async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const provider = { ...body, id };
+  await kv.set(`provider:${id}`, provider);
+  return c.json(provider);
+});
+
+app.delete(`${BASE_PATH}/partners/provider/:id`, async (c) => {
+  const id = c.req.param("id");
+  await kv.del(`provider:${id}`);
+  return c.json({ success: true });
+});
+
 app.post(`${BASE_PATH}/partners/customer`, async (c) => {
   const body = await c.req.json();
   const id = body.id || crypto.randomUUID();
   const customer = { ...body, id };
   await kv.set(`customer:${id}`, customer);
   return c.json(customer);
+});
+
+app.put(`${BASE_PATH}/partners/customer/:id`, async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const customer = { ...body, id };
+  await kv.set(`customer:${id}`, customer);
+  return c.json(customer);
+});
+
+app.delete(`${BASE_PATH}/partners/customer/:id`, async (c) => {
+  const id = c.req.param("id");
+  await kv.del(`customer:${id}`);
+  return c.json({ success: true });
 });
 
 // Sales Routes
@@ -113,6 +169,20 @@ app.post(`${BASE_PATH}/sales`, async (c) => {
   return c.json(sale);
 });
 
+app.put(`${BASE_PATH}/sales/:id`, async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const sale = { ...body, id };
+  await kv.set(`sale:${id}`, sale);
+  return c.json(sale);
+});
+
+app.delete(`${BASE_PATH}/sales/:id`, async (c) => {
+  const id = c.req.param("id");
+  await kv.del(`sale:${id}`);
+  return c.json({ success: true });
+});
+
 // Procurement Routes
 app.get(`${BASE_PATH}/procurement`, async (c) => {
   const pos = await getByPrefix('po:');
@@ -127,6 +197,20 @@ app.post(`${BASE_PATH}/procurement`, async (c) => {
   return c.json(po);
 });
 
+app.put(`${BASE_PATH}/procurement/:id`, async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const po = { ...body, id };
+  await kv.set(`po:${id}`, po);
+  return c.json(po);
+});
+
+app.delete(`${BASE_PATH}/procurement/:id`, async (c) => {
+  const id = c.req.param("id");
+  await kv.del(`po:${id}`);
+  return c.json({ success: true });
+});
+
 // Finance Routes
 app.get(`${BASE_PATH}/finance`, async (c) => {
   const payments = await getByPrefix('payment:');
@@ -139,6 +223,20 @@ app.post(`${BASE_PATH}/finance`, async (c) => {
   const payment = { ...body, id };
   await kv.set(`payment:${id}`, payment);
   return c.json(payment);
+});
+
+app.put(`${BASE_PATH}/finance/:id`, async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const payment = { ...body, id };
+  await kv.set(`payment:${id}`, payment);
+  return c.json(payment);
+});
+
+app.delete(`${BASE_PATH}/finance/:id`, async (c) => {
+  const id = c.req.param("id");
+  await kv.del(`payment:${id}`);
+  return c.json({ success: true });
 });
 
 // Admin/Managers Routes

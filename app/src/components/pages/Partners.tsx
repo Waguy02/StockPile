@@ -7,14 +7,48 @@ import {
   MoreHorizontal,
   Mail,
   Loader2,
-  Phone
+  Phone,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
+import { api } from '../../lib/api';
 import { AddPartnerDialog } from '../modals/AddPartnerDialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 
 export function Partners() {
-  const { providers, customers, isLoading } = useStore();
+  const { providers, customers, isLoading, refresh } = useStore();
   const [activeModal, setActiveModal] = useState<'provider' | 'customer' | null>(null);
+  const [editingPartner, setEditingPartner] = useState<any>(null);
+
+  const handleEdit = (type: 'provider' | 'customer', partner: any) => {
+    setEditingPartner(partner);
+    setActiveModal(type);
+  };
+
+  const closeModal = () => {
+    setActiveModal(null);
+    setEditingPartner(null);
+  };
+
+  const handleDeleteProvider = async (id: string) => {
+    if (confirm('Are you sure you want to delete this provider?')) {
+      await api.deleteProvider(id);
+      await refresh();
+    }
+  };
+
+  const handleDeleteCustomer = async (id: string) => {
+    if (confirm('Are you sure you want to delete this customer?')) {
+      await api.deleteCustomer(id);
+      await refresh();
+    }
+  };
 
   if (isLoading) {
     return (
@@ -35,8 +69,9 @@ export function Partners() {
       
       <AddPartnerDialog 
         open={!!activeModal} 
-        onOpenChange={(open) => !open && setActiveModal(null)} 
-        type={activeModal || 'provider'} 
+        onOpenChange={(open) => !open && closeModal()} 
+        type={activeModal || 'provider'}
+        partner={editingPartner} 
       />
 
 
@@ -98,9 +133,23 @@ export function Partners() {
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-right">
-                      <button className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all opacity-0 group-hover:opacity-100">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem className="cursor-pointer" onClick={() => handleEdit('provider', provider)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteProvider(provider.id)}>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))}
@@ -172,9 +221,23 @@ export function Partners() {
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-right">
-                      <button className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all opacity-0 group-hover:opacity-100">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem className="cursor-pointer" onClick={() => handleEdit('customer', customer)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteCustomer(customer.id)}>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))}

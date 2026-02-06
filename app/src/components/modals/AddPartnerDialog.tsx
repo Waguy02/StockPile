@@ -33,9 +33,10 @@ interface AddPartnerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   type?: 'provider' | 'customer';
+  partner?: any;
 }
 
-export function AddPartnerDialog({ open, onOpenChange, type = 'provider' }: AddPartnerDialogProps) {
+export function AddPartnerDialog({ open, onOpenChange, type = 'provider', partner }: AddPartnerDialogProps) {
   const { refresh } = useStore();
   const form = useForm({
     defaultValues: {
@@ -45,27 +46,46 @@ export function AddPartnerDialog({ open, onOpenChange, type = 'provider' }: AddP
     }
   });
 
+  React.useEffect(() => {
+    if (partner) {
+      form.reset({
+        name: partner.name,
+        contactInfo: partner.contactInfo || '',
+        email: partner.email || '',
+      });
+    } else {
+      form.reset({
+        name: '',
+        contactInfo: '',
+        email: '',
+      });
+    }
+  }, [partner, form]);
+
   const [isLoading, setIsLoading] = React.useState(false);
 
   const onSubmit = async (data: any) => {
     setIsLoading(true);
     try {
-        // Since we don't have explicit endpoint for creating partners in the mock API wrapper (lib/api.ts),
-        // we might need to add it or skip implementation if backend doesn't support it yet.
-        // Assuming there might be a generic create endpoint or we simulate it.
-        // Checking api.ts... it only has getPartners. 
-        // We will assume a hypothetical endpoint exists for now or just log it.
-        
-        console.warn("API for creating partner not fully implemented in client wrapper. Simulating success.");
-        
-        // TODO: Implement actual API call
-        // await api.createPartner({ ...data, type });
+        if (type === 'provider') {
+          if (partner) {
+            await api.updateProvider(partner.id, { ...partner, ...data });
+          } else {
+            await api.createProvider({ ...data, status: 'active' });
+          }
+        } else {
+           if (partner) {
+            await api.updateCustomer(partner.id, { ...partner, ...data });
+          } else {
+            await api.createCustomer({ ...data, status: 'active' });
+          }
+        }
         
         await refresh();
         onOpenChange(false);
         form.reset();
     } catch (error) {
-        console.error('Failed to create partner', error);
+        console.error('Failed to save partner', error);
     } finally {
         setIsLoading(false);
     }
@@ -75,9 +95,9 @@ export function AddPartnerDialog({ open, onOpenChange, type = 'provider' }: AddP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New {type === 'provider' ? 'Provider' : 'Customer'}</DialogTitle>
+          <DialogTitle>{partner ? 'Edit' : 'Add New'} {type === 'provider' ? 'Provider' : 'Customer'}</DialogTitle>
           <DialogDescription>
-            Register a new {type === 'provider' ? 'supplier' : 'client'} in the system.
+             {partner ? 'Update details for this' : 'Register a new'}  {type === 'provider' ? 'supplier' : 'client'} in the system.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

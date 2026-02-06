@@ -8,17 +8,46 @@ import {
   CheckCircle2,
   Clock,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
 import { CreateOrderDialog } from '../modals/CreateOrderDialog';
+import { api } from '../../lib/api';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 
 export function Procurement() {
-  const { purchaseOrders, providers, managers, isLoading } = useStore();
+  const { purchaseOrders, providers, managers, isLoading, refresh } = useStore();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<any>(null);
   
   const getProviderName = (id: string) => providers.find(p => p.id === id)?.name || 'Unknown Provider';
   const getManagerName = (id: string) => managers.find(m => m.id === id)?.name || 'Unknown Manager';
+
+  const handleEditOrder = (order: any) => {
+    setEditingOrder(order);
+    setIsCreateOpen(true);
+  };
+
+  const handleDeleteOrder = async (id: string) => {
+    if (confirm('Are you sure you want to delete this purchase order?')) {
+        await api.deletePO(id);
+        await refresh();
+    }
+  };
+
+  const handleCloseDialog = (open: boolean) => {
+    setIsCreateOpen(open);
+    if (!open) {
+        setEditingOrder(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -44,7 +73,12 @@ export function Procurement() {
         </button>
       </div>
 
-      <CreateOrderDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} type="purchase" />
+      <CreateOrderDialog 
+        open={isCreateOpen} 
+        onOpenChange={handleCloseDialog} 
+        type="purchase" 
+        order={editingOrder} 
+      />
 
       <div className="bg-white rounded-2xl border border-slate-200/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden">
         <div className="p-5 bg-slate-50/50 flex flex-col sm:flex-row gap-4 justify-between items-center border-b border-slate-100">
@@ -119,9 +153,23 @@ export function Procurement() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                          <MoreHorizontal className="w-5 h-5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                         <DropdownMenuItem className="cursor-pointer" onClick={() => handleEditOrder(po)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteOrder(po.id)}>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               ))}
