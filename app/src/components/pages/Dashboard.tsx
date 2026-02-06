@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   TrendingUp, 
@@ -14,6 +14,7 @@ import {
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useStore } from '../../lib/StoreContext';
 import { formatCurrency } from '../../lib/formatters';
+import { ViewState } from '../../lib/data';
 
 const chartData = [
   { name: 'Jan', sales: 4000, orders: 2400 },
@@ -25,9 +26,10 @@ const chartData = [
   { name: 'Jul', sales: 3490, orders: 4300 },
 ];
 
-export function Dashboard() {
+export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => void }) {
   const { stockBatches, sales, purchaseOrders, isLoading } = useStore();
   const { t } = useTranslation();
+  const [timeRange, setTimeRange] = useState('last7Days');
 
   if (isLoading) {
     return (
@@ -37,8 +39,29 @@ export function Dashboard() {
     );
   }
 
+  const getDateRangeLabel = () => {
+    switch(timeRange) {
+      case 'last7Days': return t('dashboard.filter.last7Days');
+      case 'last30Days': return t('dashboard.filter.last30Days');
+      case 'lastTrimester': return t('dashboard.filter.lastTrimester');
+      case 'lastYear': return t('dashboard.filter.lastYear');
+      default: return '';
+    }
+  };
+
+  const getFilteredSales = () => {
+    const now = new Date();
+    const past = new Date();
+    if (timeRange === 'last7Days') past.setDate(now.getDate() - 7);
+    if (timeRange === 'last30Days') past.setDate(now.getDate() - 30);
+    if (timeRange === 'lastTrimester') past.setMonth(now.getMonth() - 3);
+    if (timeRange === 'lastYear') past.setFullYear(now.getFullYear() - 1);
+
+    return sales.filter(s => new Date(s.initiationDate) >= past);
+  };
+
   const totalStockCount = stockBatches.reduce((acc, batch) => acc + batch.quantity, 0);
-  const totalSalesRevenue = sales.reduce((acc, sale) => acc + sale.totalAmount, 0);
+  const filteredSalesRevenue = getFilteredSales().reduce((acc, sale) => acc + sale.totalAmount, 0);
   const lowStockItems = stockBatches.filter(b => b.quantity < 10).length;
   const pendingOrders = purchaseOrders.filter(p => p.status === 'pending').length;
 
@@ -50,10 +73,15 @@ export function Dashboard() {
           <p className="text-slate-500 mt-2 text-sm font-medium">{t('dashboard.subtitle')}</p>
         </div>
         <div className="flex gap-2">
-            <select className="bg-white border-0 ring-1 ring-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm cursor-pointer">
-                <option>{t('dashboard.filter.last7Days')}</option>
-                <option>{t('dashboard.filter.last30Days')}</option>
-                <option>{t('dashboard.filter.thisQuarter')}</option>
+            <select 
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="bg-white border-0 ring-1 ring-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm cursor-pointer"
+            >
+                <option value="last7Days">{t('dashboard.filter.last7Days')}</option>
+                <option value="last30Days">{t('dashboard.filter.last30Days')}</option>
+                <option value="lastTrimester">{t('dashboard.filter.lastTrimester')}</option>
+                <option value="lastYear">{t('dashboard.filter.lastYear')}</option>
             </select>
             <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md shadow-indigo-200 transition-colors">
                 {t('dashboard.downloadReport')}
@@ -71,15 +99,17 @@ export function Dashboard() {
           trend="+12%"
           trendUp={true}
           variant="blue"
+          onClick={() => onNavigate('inventory')}
         />
         <StatCard 
           title={t('dashboard.totalRevenue')}
-          value={formatCurrency(totalSalesRevenue)} 
-          subtitle={t('dashboard.currentFiscalYear')}
+          value={formatCurrency(filteredSalesRevenue)} 
+          subtitle={getDateRangeLabel()}
           icon={DollarSign}
           trend="+8.2%"
           trendUp={true}
           variant="green"
+          onClick={() => onNavigate('finance')}
         />
         <StatCard 
           title={t('dashboard.lowStock')}
@@ -89,6 +119,7 @@ export function Dashboard() {
           trend="Action needed"
           trendUp={false}
           variant="red"
+          onClick={() => onNavigate('inventory')}
         />
         <StatCard 
           title={t('dashboard.pendingOrders')}
@@ -98,6 +129,7 @@ export function Dashboard() {
           trend="2 arriving"
           trendUp={true}
           variant="purple"
+          onClick={() => onNavigate('procurement')}
         />
       </div>
 
@@ -201,7 +233,10 @@ export function Dashboard() {
               </div>
             ))}
           </div>
-          <button className="w-full mt-6 py-3 text-sm text-indigo-600 font-semibold bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all duration-200">
+          <button 
+            onClick={() => onNavigate('finance')}
+            className="w-full mt-6 py-3 text-sm text-indigo-600 font-semibold bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all duration-200"
+          >
             {t('dashboard.viewAllActivity')}
           </button>
         </div>
@@ -210,7 +245,7 @@ export function Dashboard() {
   );
 }
 
-function StatCard({ title, value, subtitle, icon: Icon, trend, trendUp, variant }: any) {
+function StatCard({ title, value, subtitle, icon: Icon, trend, trendUp, variant, onClick }: any) {
   const styles: any = {
     blue: { bg: "bg-blue-500", text: "text-blue-600", light: "bg-blue-50" },
     green: { bg: "bg-emerald-500", text: "text-emerald-600", light: "bg-emerald-50" },
@@ -222,7 +257,10 @@ function StatCard({ title, value, subtitle, icon: Icon, trend, trendUp, variant 
   const s = styles[variant] || styles.blue;
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] hover:shadow-lg transition-all duration-300 group">
+    <div 
+      onClick={onClick}
+      className={`bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] hover:shadow-lg transition-all duration-300 group ${onClick ? 'cursor-pointer hover:-translate-y-1' : ''}`}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-slate-500">{title}</p>

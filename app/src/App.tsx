@@ -21,7 +21,7 @@ function AppContent() {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onNavigate={setCurrentView} />;
       case 'inventory':
         return <Inventory />;
       case 'partners':
@@ -35,7 +35,7 @@ function AppContent() {
       case 'admin':
         return <Admin />;
       default:
-        return <Dashboard />;
+        return <Dashboard onNavigate={setCurrentView} />;
     }
   };
 
