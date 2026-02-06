@@ -32,10 +32,10 @@ export function ConnectionStatus() {
     <div className={cn(
       "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold select-none transition-all duration-300 border",
       !isOnline 
-        ? "bg-rose-100 text-rose-700 border-rose-200" 
+        ? "bg-rose-100 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-900/30" 
         : isSyncing 
-          ? "bg-amber-100 text-amber-700 border-amber-200"
-          : "bg-emerald-100 text-emerald-700 border-emerald-200"
+          ? "bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/30"
+          : "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/30"
     )}>
       {!isOnline ? (
         <>

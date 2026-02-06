@@ -92,7 +92,6 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
             partnerId: '',
             totalAmount: '0',
             amountPaid: '0',
-            amountPaid: '0',
       status: 'draft',
             notes: '',
             items: [],
@@ -245,13 +244,13 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-slate-900 dark:text-slate-100">
             {order ? t('modals.createOrder.editTitle', { type: type === 'purchase' ? t('modals.createOrder.purchase') : t('modals.createOrder.sale') }) 
                    : t('modals.createOrder.createTitle', { type: type === 'purchase' ? t('modals.createOrder.purchase') : t('modals.createOrder.sale') })}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-slate-500 dark:text-slate-400">
              {order ? t('modals.createOrder.editDesc', { type: type === 'purchase' ? t('modals.createOrder.procurement') : t('modals.createOrder.customerSale') })
                     : t('modals.createOrder.createDesc', { type: type === 'purchase' ? t('modals.createOrder.procurement') : t('modals.createOrder.customerSale') })}
           </DialogDescription>
@@ -264,20 +263,20 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
               name="partnerId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{type === 'purchase' ? t('modals.createOrder.providerLabel') : t('modals.createOrder.customerLabel')}</FormLabel>
+                  <FormLabel className="text-slate-900 dark:text-slate-200">{type === 'purchase' ? t('modals.createOrder.providerLabel') : t('modals.createOrder.customerLabel')}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                         <SelectValue placeholder={t('modals.createOrder.selectPlaceholder', { type: type === 'purchase' ? t('modals.createOrder.providerLabel') : t('modals.createOrder.customerLabel') })} />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
                       {type === 'purchase' 
                         ? providers.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            <SelectItem key={p.id} value={p.id} className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800">{p.name}</SelectItem>
                           ))
                         : customers.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                            <SelectItem key={c.id} value={c.id} className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800">{c.name}</SelectItem>
                           ))
                       }
                     </SelectContent>
@@ -289,12 +288,13 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
 
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <FormLabel>{t('modals.createOrder.itemsLabel')}</FormLabel>
+                <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.createOrder.itemsLabel')}</FormLabel>
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
                   onClick={() => append({ productId: '', quantity: '1', unitPrice: '0' })}
+                  className="border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   {t('modals.createOrder.addProduct')}
@@ -311,13 +311,13 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                     : null;
 
                 return (
-                <div key={field.id} className="flex gap-2 items-end border p-2 rounded-md bg-slate-50 dark:bg-slate-900">
+                <div key={field.id} className="flex gap-2 items-end border border-slate-200 dark:border-slate-800 p-2 rounded-md bg-slate-50 dark:bg-slate-900">
                   <FormField
                     control={form.control}
                     name={`items.${index}.productId`}
                     render={({ field }) => (
                       <FormItem className="flex-1">
-                        <FormLabel className="text-xs">{t('modals.createOrder.productLabel')}</FormLabel>
+                        <FormLabel className="text-xs text-slate-900 dark:text-slate-200">{t('modals.createOrder.productLabel')}</FormLabel>
                         <Select 
                             onValueChange={(val) => {
                                 field.onChange(val);
@@ -329,13 +329,13 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                             value={field.value}
                         >
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 h-8 text-xs">
                               <SelectValue placeholder={t('modals.createOrder.selectProduct')} />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                          <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
                             {products.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                              <SelectItem key={p.id} value={p.id} className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800 text-xs">{p.name}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -348,10 +348,10 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                     name={`items.${index}.quantity`}
                     render={({ field }) => (
                       <FormItem className="w-24">
-                        <FormLabel className="text-xs">
+                        <FormLabel className="text-xs text-slate-900 dark:text-slate-200">
                             {t('modals.createOrder.qtyLabel')}
                             {availableStock !== null && (
-                                <span className="block text-[10px] font-normal text-slate-500 whitespace-nowrap">
+                                <span className="block text-[10px] font-normal text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                     {t('modals.createOrder.maxStock', { stock: availableStock })}
                                 </span>
                             )}
@@ -362,6 +362,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                             min="1" 
                             max={availableStock !== null ? availableStock : undefined}
                             {...field} 
+                            className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 h-8 text-xs"
                           />
                         </FormControl>
                       </FormItem>
@@ -373,9 +374,9 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                     name={`items.${index}.unitPrice`}
                     render={({ field }) => (
                       <FormItem className="w-24">
-                        <FormLabel className="text-xs">{t('modals.createOrder.priceLabel')}</FormLabel>
+                        <FormLabel className="text-xs text-slate-900 dark:text-slate-200">{t('modals.createOrder.priceLabel')}</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" min="0" {...field} />
+                          <Input type="number" step="0.01" min="0" {...field} className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 h-8 text-xs" />
                         </FormControl>
                       </FormItem>
                     )}
@@ -385,7 +386,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="mb-2"
+                    className="mb-0.5 h-8 w-8 hover:bg-slate-200 dark:hover:bg-slate-800"
                     onClick={() => remove(index)}
                   >
                     <Trash2 className="h-4 w-4 text-red-500" />
@@ -401,9 +402,9 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
               name="totalAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('modals.createOrder.totalLabel')}</FormLabel>
+                  <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.createOrder.totalLabel')}</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} />
+                    <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -415,9 +416,9 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
               name="amountPaid"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('modals.createOrder.paidLabel')}</FormLabel>
+                  <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.createOrder.paidLabel')}</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} />
+                    <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -429,22 +430,22 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
               name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('modals.createOrder.statusLabel')}</FormLabel>
+                  <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.createOrder.statusLabel')}</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     value={field.value}
                     disabled={order?.status === 'completed'}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                         <SelectValue placeholder={t('modals.createOrder.selectStatus')} />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="draft">{t('modals.createOrder.status.draft')}</SelectItem>
-                      <SelectItem value="pending">{t('modals.createOrder.status.pending')}</SelectItem>
-                      <SelectItem value="completed">{type === 'purchase' ? t('modals.createOrder.status.received') : t('modals.createOrder.status.completed')}</SelectItem>
-                      <SelectItem value="cancelled">{t('modals.createOrder.status.cancelled')}</SelectItem>
+                    <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+                      <SelectItem value="draft" className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800">{t('modals.createOrder.status.draft')}</SelectItem>
+                      <SelectItem value="pending" className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800">{t('modals.createOrder.status.pending')}</SelectItem>
+                      <SelectItem value="completed" className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800">{type === 'purchase' ? t('modals.createOrder.status.received') : t('modals.createOrder.status.completed')}</SelectItem>
+                      <SelectItem value="cancelled" className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800">{t('modals.createOrder.status.cancelled')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -457,9 +458,9 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('modals.createOrder.notesLabel')}</FormLabel>
+                  <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.createOrder.notesLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder={t('modals.createOrder.notesPlaceholder')} {...field} />
+                    <Input placeholder={t('modals.createOrder.notesPlaceholder')} {...field} className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -467,7 +468,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
             />
 
             <DialogFooter>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-600 dark:hover:bg-indigo-700">
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {order ? t('modals.createOrder.saveButton') : t('modals.createOrder.createButton')}
               </Button>

@@ -95,13 +95,13 @@ export function AddPartnerDialog({ open, onOpenChange, type = 'provider', partne
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="text-slate-900 dark:text-slate-100">
             {partner ? t('modals.addPartner.editTitle', { type: type === 'provider' ? t('modals.addPartner.provider') : t('modals.addPartner.customer') }) 
                      : t('modals.addPartner.addTitle', { type: type === 'provider' ? t('modals.addPartner.provider') : t('modals.addPartner.customer') })}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-slate-500 dark:text-slate-400">
              {partner ? t('modals.addPartner.editDesc', { type: type === 'provider' ? t('modals.addPartner.supplier') : t('modals.addPartner.client') })
                       : t('modals.addPartner.addDesc', { type: type === 'provider' ? t('modals.addPartner.supplier') : t('modals.addPartner.client') })}
           </DialogDescription>
@@ -113,9 +113,9 @@ export function AddPartnerDialog({ open, onOpenChange, type = 'provider', partne
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('modals.addPartner.nameLabel')}</FormLabel>
+                  <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.addPartner.nameLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder={type === 'provider' ? t('modals.addPartner.namePlaceholderProvider') : t('modals.addPartner.namePlaceholderCustomer')} {...field} />
+                    <Input placeholder={type === 'provider' ? t('modals.addPartner.namePlaceholderProvider') : t('modals.addPartner.namePlaceholderCustomer')} {...field} className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -127,9 +127,9 @@ export function AddPartnerDialog({ open, onOpenChange, type = 'provider', partne
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('modals.addPartner.emailLabel')}</FormLabel>
+                  <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.addPartner.emailLabel')}</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="contact@example.com" {...field} />
+                    <Input type="email" placeholder="contact@example.com" {...field} className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -141,9 +141,9 @@ export function AddPartnerDialog({ open, onOpenChange, type = 'provider', partne
               name="contactInfo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('modals.addPartner.contactLabel')}</FormLabel>
+                  <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.addPartner.contactLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="+1 234..." {...field} />
+                    <Input placeholder="+1 234..." {...field} className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -151,7 +151,7 @@ export function AddPartnerDialog({ open, onOpenChange, type = 'provider', partne
             />
 
             <DialogFooter>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-600 dark:hover:bg-indigo-700">
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('modals.addPartner.registerButton', { type: type === 'provider' ? t('modals.addPartner.provider') : t('modals.addPartner.customer') })}
               </Button>

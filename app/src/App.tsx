@@ -14,6 +14,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { queryClient, persister } from './lib/queryClient';
 
 import { Toaster } from './components/ui/sonner';
+import { ThemeProvider } from './components/theme-provider';
 
 function AppContent() {
   const [currentView, setCurrentView] = useState<ViewState>('dashboard');
@@ -53,9 +54,11 @@ function App() {
       client={queryClient} 
       persistOptions={{ persister }}
     >
-      <StoreProvider>
-        <AppContent />
-      </StoreProvider>
+      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+        <StoreProvider>
+          <AppContent />
+        </StoreProvider>
+      </ThemeProvider>
     </PersistQueryClientProvider>
   );
 }

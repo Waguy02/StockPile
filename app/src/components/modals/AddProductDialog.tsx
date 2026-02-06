@@ -102,10 +102,10 @@ export function AddProductDialog({ open, onOpenChange, product }: AddProductDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
         <DialogHeader>
-          <DialogTitle>{product ? t('modals.addProduct.editTitle') : t('modals.addProduct.addTitle')}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-slate-900 dark:text-slate-100">{product ? t('modals.addProduct.editTitle') : t('modals.addProduct.addTitle')}</DialogTitle>
+          <DialogDescription className="text-slate-500 dark:text-slate-400">
              {product ? t('modals.addProduct.editDesc') : t('modals.addProduct.addDesc')}
           </DialogDescription>
         </DialogHeader>
@@ -116,9 +116,9 @@ export function AddProductDialog({ open, onOpenChange, product }: AddProductDial
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('modals.addProduct.nameLabel')}</FormLabel>
+                  <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.addProduct.nameLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder={t('modals.addProduct.namePlaceholder')} {...field} />
+                    <Input placeholder={t('modals.addProduct.namePlaceholder')} {...field} className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -130,16 +130,16 @@ export function AddProductDialog({ open, onOpenChange, product }: AddProductDial
               name="categoryId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('modals.addProduct.categoryLabel')}</FormLabel>
+                  <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.addProduct.categoryLabel')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                         <SelectValue placeholder={t('modals.addProduct.categoryPlaceholder')} />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
                       {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
+                        <SelectItem key={category.id} value={category.id} className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800">
                           {category.name}
                         </SelectItem>
                       ))}
@@ -155,11 +155,11 @@ export function AddProductDialog({ open, onOpenChange, product }: AddProductDial
               name="baseUnitPrice"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('modals.addProduct.priceLabel')}</FormLabel>
+                  <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.addProduct.priceLabel')}</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} />
+                    <Input type="number" step="0.01" {...field} className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400" />
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-slate-500 dark:text-slate-400">
                     {t('modals.addProduct.priceDesc')}
                   </FormDescription>
                   <FormMessage />
@@ -172,9 +172,9 @@ export function AddProductDialog({ open, onOpenChange, product }: AddProductDial
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('modals.addProduct.descLabel')}</FormLabel>
+                  <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.addProduct.descLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder={t('modals.addProduct.descPlaceholder')} {...field} />
+                    <Input placeholder={t('modals.addProduct.descPlaceholder')} {...field} className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -186,17 +186,17 @@ export function AddProductDialog({ open, onOpenChange, product }: AddProductDial
               name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('modals.addProduct.statusLabel')}</FormLabel>
+                  <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.addProduct.statusLabel')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                         <SelectValue placeholder={t('modals.addProduct.statusPlaceholder')} />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">{t('modals.addProduct.status.active')}</SelectItem>
-                      <SelectItem value="inactive">{t('modals.addProduct.status.inactive')}</SelectItem>
-                      <SelectItem value="archived">{t('modals.addProduct.status.archived')}</SelectItem>
+                    <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+                      <SelectItem value="active" className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800">{t('modals.addProduct.status.active')}</SelectItem>
+                      <SelectItem value="inactive" className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800">{t('modals.addProduct.status.inactive')}</SelectItem>
+                      <SelectItem value="archived" className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800">{t('modals.addProduct.status.archived')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -205,7 +205,7 @@ export function AddProductDialog({ open, onOpenChange, product }: AddProductDial
             />
 
             <DialogFooter>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-600 dark:hover:bg-indigo-700">
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('modals.addProduct.createButton')}
               </Button>

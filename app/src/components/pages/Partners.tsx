@@ -64,8 +64,8 @@ export function Partners() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{t('partners.title')}</h1>
-          <p className="text-slate-500 mt-2 text-sm font-medium">{t('partners.subtitle')}</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{t('partners.title')}</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm font-medium">{t('partners.subtitle')}</p>
         </div>
       </div>
       
@@ -79,21 +79,21 @@ export function Partners() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-12rem)] min-h-[500px]">
         {/* Providers Section */}
-        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col h-full">
-          <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col h-full">
+          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/30 dark:bg-slate-800/30">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                  <Building2 className="w-4 h-4" />
               </div>
-              <h2 className="font-bold text-slate-800">{t('partners.providers')}</h2>
+              <h2 className="font-bold text-slate-800 dark:text-slate-100">{t('partners.providers')}</h2>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 shadow-sm">
+              <span className="text-xs font-semibold px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 shadow-sm">
                 {providers.length} {t('partners.total')}
               </span>
               <button 
                 onClick={() => setActiveModal('provider')}
-                className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-xs shadow-sm transition-all"
+                className="flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-xs shadow-sm transition-all"
               >
                 <Plus className="w-3 h-3 mr-1.5" />
                 {t('partners.addProvider')}
@@ -101,35 +101,35 @@ export function Partners() {
             </div>
           </div>
           
-          <div className="p-4 border-b border-slate-100">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800">
             <div className="relative group">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 dark:group-focus-within:text-indigo-400 transition-colors" />
               <input 
                 type="text" 
                 placeholder={t('partners.searchProviders')}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-transparent hover:bg-slate-100 focus:bg-white focus:border-indigo-200 rounded-xl text-sm outline-none ring-0 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-200 dark:focus:border-indigo-800 rounded-xl text-sm outline-none ring-0 focus:ring-4 focus:ring-indigo-500/10 transition-all text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400"
               />
             </div>
           </div>
 
           <div className="flex-1 overflow-auto custom-scrollbar">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-sm">
-                <tr className="border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500 font-semibold">
+            <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
+              <thead className="bg-slate-50/80 dark:bg-slate-800/80 sticky top-0 z-10 backdrop-blur-sm">
+                <tr className="border-b border-slate-100 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
                   <th className="px-5 py-3">{t('partners.table.name')}</th>
                   <th className="px-5 py-3">{t('partners.table.status')}</th>
                   <th className="px-5 py-3 text-right"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {providers.map(provider => (
-                  <tr key={provider.id} className="hover:bg-slate-50/80 transition-colors group">
-                    <td className="px-5 py-3.5 font-semibold text-slate-900 group-hover:text-indigo-700 transition-colors">{provider.name}</td>
+                  <tr key={provider.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
+                    <td className="px-5 py-3.5 font-semibold text-slate-900 dark:text-slate-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">{provider.name}</td>
                     <td className="px-5 py-3.5">
                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
                         provider.status === 'active' 
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-                            : 'bg-rose-50 text-rose-700 border-rose-100'
+                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' 
+                            : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-900/30'
                       }`}>
                         {provider.status}
                       </span>
@@ -137,7 +137,7 @@ export function Partners() {
                     <td className="px-5 py-3.5 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                          <button className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all opacity-0 group-hover:opacity-100">
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
                         </DropdownMenuTrigger>
@@ -161,21 +161,21 @@ export function Partners() {
         </div>
 
         {/* Customers Section */}
-        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col h-full">
-          <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col h-full">
+          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/30 dark:bg-slate-800/30">
             <div className="flex items-center space-x-3">
-               <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
+               <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
                  <User className="w-4 h-4" />
               </div>
-              <h2 className="font-bold text-slate-800">{t('partners.customers')}</h2>
+              <h2 className="font-bold text-slate-800 dark:text-slate-100">{t('partners.customers')}</h2>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 shadow-sm">
+              <span className="text-xs font-semibold px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 shadow-sm">
                 {customers.length} {t('partners.total')}
               </span>
               <button 
                 onClick={() => setActiveModal('customer')}
-                className="flex items-center px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium text-xs shadow-sm transition-all"
+                className="flex items-center px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-xs shadow-sm transition-all"
               >
                 <Plus className="w-3 h-3 mr-1.5" />
                 {t('partners.addCustomer')}
@@ -183,32 +183,32 @@ export function Partners() {
             </div>
           </div>
 
-           <div className="p-4 border-b border-slate-100">
+           <div className="p-4 border-b border-slate-100 dark:border-slate-800">
             <div className="relative group">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-purple-500 transition-colors" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 group-focus-within:text-purple-500 dark:group-focus-within:text-purple-400 transition-colors" />
               <input 
                 type="text" 
                 placeholder={t('partners.searchCustomers')}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-transparent hover:bg-slate-100 focus:bg-white focus:border-purple-200 rounded-xl text-sm outline-none ring-0 focus:ring-4 focus:ring-purple-500/10 transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:border-purple-200 dark:focus:border-purple-800 rounded-xl text-sm outline-none ring-0 focus:ring-4 focus:ring-purple-500/10 transition-all text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400"
               />
             </div>
           </div>
 
           <div className="flex-1 overflow-auto custom-scrollbar">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-sm">
-                 <tr className="border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500 font-semibold">
+            <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
+              <thead className="bg-slate-50/80 dark:bg-slate-800/80 sticky top-0 z-10 backdrop-blur-sm">
+                 <tr className="border-b border-slate-100 dark:border-slate-800 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
                   <th className="px-5 py-3">{t('partners.table.nameContact')}</th>
                   <th className="px-5 py-3">{t('partners.table.status')}</th>
                   <th className="px-5 py-3 text-right"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {customers.map(customer => (
-                  <tr key={customer.id} className="hover:bg-slate-50/80 transition-colors group">
+                  <tr key={customer.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
                     <td className="px-5 py-3.5">
-                      <div className="font-semibold text-slate-900 group-hover:text-purple-700 transition-colors">{customer.name}</div>
-                      <div className="flex items-center text-xs text-slate-500 mt-1">
+                      <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors">{customer.name}</div>
+                      <div className="flex items-center text-xs text-slate-500 dark:text-slate-400 mt-1">
                         <Mail className="w-3 h-3 mr-1.5 opacity-70" />
                         {customer.email}
                       </div>
@@ -216,8 +216,8 @@ export function Partners() {
                      <td className="px-5 py-3.5">
                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
                         customer.status === 'active' 
-                             ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-                            : 'bg-rose-50 text-rose-700 border-rose-100'
+                             ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' 
+                            : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-900/30'
                       }`}>
                         {customer.status}
                       </span>
@@ -225,7 +225,7 @@ export function Partners() {
                     <td className="px-5 py-3.5 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                          <button className="p-1.5 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-all opacity-0 group-hover:opacity-100">
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
                         </DropdownMenuTrigger>

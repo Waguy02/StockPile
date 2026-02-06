@@ -69,14 +69,14 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
     <div className="space-y-8">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{t('dashboard.title')}</h1>
-          <p className="text-slate-500 mt-2 text-sm font-medium">{t('dashboard.subtitle')}</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{t('dashboard.title')}</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm font-medium">{t('dashboard.subtitle')}</p>
         </div>
         <div className="flex gap-2">
             <select 
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className="bg-white border-0 ring-1 ring-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm cursor-pointer"
+              className="bg-white dark:bg-slate-900 border-0 ring-1 ring-slate-200 dark:ring-slate-800 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm cursor-pointer"
             >
                 <option value="last7Days">{t('dashboard.filter.last7Days')}</option>
                 <option value="last30Days">{t('dashboard.filter.last30Days')}</option>
@@ -135,11 +135,11 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white p-8 rounded-2xl border border-slate-100 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)]">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)]">
           <div className="flex items-center justify-between mb-8">
             <div>
-                 <h2 className="text-lg font-bold text-slate-900">{t('dashboard.revenueAnalytics')}</h2>
-                 <p className="text-xs text-slate-400 mt-1 font-medium">{t('dashboard.comparisonSalesProcurement')}</p>
+                 <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('dashboard.revenueAnalytics')}</h2>
+                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">{t('dashboard.comparisonSalesProcurement')}</p>
             </div>
           </div>
           <div className="h-80 w-full">
@@ -155,7 +155,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
                     <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:stroke-slate-800" />
                 <XAxis 
                     dataKey="name" 
                     axisLine={false} 
@@ -203,27 +203,27 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] flex flex-col">
-          <h2 className="text-lg font-bold text-slate-900 mb-6">{t('dashboard.recentActivity')}</h2>
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] flex flex-col">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-6">{t('dashboard.recentActivity')}</h2>
           <div className="space-y-6 flex-1 overflow-auto pr-2 custom-scrollbar">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-start gap-4 group cursor-pointer">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                     i % 2 === 0 
-                        ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100' 
-                        : 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100'
+                        ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30' 
+                        : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30'
                 }`}>
                   {i % 2 === 0 ? <DollarSign className="w-5 h-5" /> : <Package className="w-5 h-5" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
-                     <p className="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                     <p className="text-sm font-semibold text-slate-900 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                         {i % 2 === 0 ? t('dashboard.activity.newSale') : t('dashboard.activity.stockBatch')}
                     </p>
-                    <span className="text-[10px] text-slate-400 font-medium bg-slate-50 px-2 py-0.5 rounded-full">2h</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-full">2h</span>
                   </div>
                  
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                     {i % 2 === 0 
                         ? t('dashboard.activity.saleDesc', { id: '2490', customer: 'Acme Corp.' }) 
                         : t('dashboard.activity.batchDesc', { id: 'B-902', count: '50' })
@@ -235,7 +235,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
           </div>
           <button 
             onClick={() => onNavigate('finance')}
-            className="w-full mt-6 py-3 text-sm text-indigo-600 font-semibold bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all duration-200"
+            className="w-full mt-6 py-3 text-sm text-indigo-600 dark:text-indigo-400 font-semibold bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-xl transition-all duration-200"
           >
             {t('dashboard.viewAllActivity')}
           </button>
@@ -247,11 +247,11 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
 
 function StatCard({ title, value, subtitle, icon: Icon, trend, trendUp, variant, onClick }: any) {
   const styles: any = {
-    blue: { bg: "bg-blue-500", text: "text-blue-600", light: "bg-blue-50" },
-    green: { bg: "bg-emerald-500", text: "text-emerald-600", light: "bg-emerald-50" },
-    red: { bg: "bg-rose-500", text: "text-rose-600", light: "bg-rose-50" },
-    purple: { bg: "bg-violet-500", text: "text-violet-600", light: "bg-violet-50" },
-    orange: { bg: "bg-amber-500", text: "text-amber-600", light: "bg-amber-50" },
+    blue: { bg: "bg-blue-500", text: "text-blue-600 dark:text-blue-400", light: "bg-blue-50 dark:bg-blue-900/20" },
+    green: { bg: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", light: "bg-emerald-50 dark:bg-emerald-900/20" },
+    red: { bg: "bg-rose-500", text: "text-rose-600 dark:text-rose-400", light: "bg-rose-50 dark:bg-rose-900/20" },
+    purple: { bg: "bg-violet-500", text: "text-violet-600 dark:text-violet-400", light: "bg-violet-50 dark:bg-violet-900/20" },
+    orange: { bg: "bg-amber-500", text: "text-amber-600 dark:text-amber-400", light: "bg-amber-50 dark:bg-amber-900/20" },
   };
 
   const s = styles[variant] || styles.blue;
@@ -259,23 +259,23 @@ function StatCard({ title, value, subtitle, icon: Icon, trend, trendUp, variant,
   return (
     <div 
       onClick={onClick}
-      className={`bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] hover:shadow-lg transition-all duration-300 group ${onClick ? 'cursor-pointer hover:-translate-y-1' : ''}`}
+      className={`bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] hover:shadow-lg transition-all duration-300 group ${onClick ? 'cursor-pointer hover:-translate-y-1' : ''}`}
     >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-500">{title}</p>
-          <h3 className="text-3xl font-bold text-slate-900 mt-2 tracking-tight group-hover:text-indigo-600 transition-colors">{value}</h3>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
+          <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2 tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{value}</h3>
         </div>
         <div className={`p-3.5 rounded-xl ${s.light} group-hover:scale-110 transition-transform duration-300`}>
           <Icon className={`w-6 h-6 ${s.text}`} />
         </div>
       </div>
       <div className="mt-4 flex items-center justify-between">
-         <div className={`flex items-center text-xs font-bold px-2 py-1 rounded-full ${trendUp ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+         <div className={`flex items-center text-xs font-bold px-2 py-1 rounded-full ${trendUp ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'}`}>
              {trendUp ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <ArrowDownRight className="w-3 h-3 mr-1" />}
              {trend}
          </div>
-         <p className="text-xs text-slate-400 font-medium">{subtitle}</p>
+         <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">{subtitle}</p>
       </div>
     </div>
   );
