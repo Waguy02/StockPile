@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
-  TrendingUp, 
   AlertCircle, 
   Package, 
   ShoppingCart,
@@ -9,12 +8,33 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Loader2,
-  MoreHorizontal
+  Download,
+  PieChart as PieChartIcon,
+  BarChart3,
+  TrendingUp,
+  Activity
 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, BarChart, Bar, Legend
+} from 'recharts';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useStore } from '../../lib/StoreContext';
 import { formatCurrency } from '../../lib/formatters';
 import { ViewState } from '../../lib/data';
+
+// --- Colors for Charts ---
+// More refined palette
+const COLORS = [
+    '#6366f1', // Indigo 500
+    '#10b981', // Emerald 500
+    '#f59e0b', // Amber 500
+    '#ec4899', // Pink 500
+    '#8b5cf6', // Violet 500
+    '#06b6d4', // Cyan 500
+    '#f43f5e'  // Rose 500
+];
 
 const chartData = [
   { name: 'Jan', sales: 4000, orders: 2400 },
@@ -27,9 +47,95 @@ const chartData = [
 ];
 
 export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => void }) {
-  const { stockBatches, sales, purchaseOrders, isLoading } = useStore();
+  const { stockBatches, sales, purchaseOrders, products, categories, isLoading, currentUser } = useStore();
   const { t } = useTranslation();
   const [timeRange, setTimeRange] = useState('last7Days');
+
+  // RBAC Filtering
+  const isStaff = currentUser?.role === 'staff';
+  
+  const relevantSales = useMemo(() => {
+    if (isStaff && currentUser) {
+      return sales.filter(s => s.managerId === currentUser.id);
+    }
+    return sales;
+  }, [sales, isStaff, currentUser]);
+
+  const relevantOrders = useMemo(() => {
+    if (isStaff) return [];
+    return purchaseOrders;
+  }, [purchaseOrders, isStaff]);
+
+  const relevantBatches = useMemo(() => {
+    if (isStaff) return []; // Staff cannot see stock batches
+    return stockBatches;
+  }, [stockBatches, isStaff]);
+
+  // --- Derived Data for New Charts ---
+
+  // 1. Stock Distribution by Category
+  const stockByCategoryData = useMemo(() => {
+    const categoryCount: Record<string, number> = {};
+    relevantBatches.forEach(batch => {
+      const product = products.find(p => p.id === batch.productId);
+      if (product) {
+        const category = categories.find(c => c.id === product.categoryId);
+        const catName = category ? category.name : t('common.unknown');
+        categoryCount[catName] = (categoryCount[catName] || 0) + batch.quantity;
+      }
+    });
+    return Object.entries(categoryCount).map(([name, value]) => ({ name, value }));
+  }, [relevantBatches, products, categories, t]);
+
+  // 2. Top Selling Products
+  const topSellingData = useMemo(() => {
+    const productSales: Record<string, number> = {};
+    relevantSales.forEach(sale => {
+      if (sale.items) {
+        sale.items.forEach(item => {
+           const product = products.find(p => p.id === item.productId);
+           const name = product ? product.name : 'Unknown Product';
+           productSales[name] = (productSales[name] || 0) + item.quantity;
+        });
+      }
+    });
+    
+    return Object.entries(productSales)
+      .map(([name, value]) => ({ name, quantity: value }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5);
+  }, [relevantSales, products]);
+
+  // 3. Purchase Order Status Distribution
+  const orderStatusData = useMemo(() => {
+    const statusCount: Record<string, number> = {};
+    relevantOrders.forEach(po => {
+      const status = t(`procurement.status.${po.status}`);
+      statusCount[status] = (statusCount[status] || 0) + 1;
+    });
+    return Object.entries(statusCount).map(([name, value]) => ({ name, value }));
+  }, [relevantOrders, t]);
+
+  // 4. Monthly Sales Growth
+  const monthlySalesData = useMemo(() => {
+    if (relevantSales.length === 0) return chartData; // Fallback to static if no data
+
+    const salesByMonth: Record<string, number> = {};
+    relevantSales.forEach(sale => {
+        const date = new Date(sale.initiationDate);
+        const month = date.toLocaleString('default', { month: 'short' });
+        salesByMonth[month] = (salesByMonth[month] || 0) + sale.totalAmount;
+    });
+
+    if (Object.keys(salesByMonth).length < 2) return chartData;
+
+    return Object.entries(salesByMonth).map(([name, sales]) => ({ 
+        name, 
+        sales,
+        orders: Math.floor(sales * 0.6) 
+    }));
+  }, [relevantSales]);
+
 
   if (isLoading) {
     return (
@@ -57,16 +163,83 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
     if (timeRange === 'lastTrimester') past.setMonth(now.getMonth() - 3);
     if (timeRange === 'lastYear') past.setFullYear(now.getFullYear() - 1);
 
-    return sales.filter(s => new Date(s.initiationDate) >= past);
+    return relevantSales.filter(s => new Date(s.initiationDate) >= past);
   };
 
-  const totalStockCount = stockBatches.reduce((acc, batch) => acc + batch.quantity, 0);
+  const totalStockCount = relevantBatches.reduce((acc, batch) => acc + batch.quantity, 0);
   const filteredSalesRevenue = getFilteredSales().reduce((acc, sale) => acc + sale.totalAmount, 0);
-  const lowStockItems = stockBatches.filter(b => b.quantity < 10).length;
-  const pendingOrders = purchaseOrders.filter(p => p.status === 'pending').length;
+  const lowStockItems = relevantBatches.filter(b => b.quantity < 10).length;
+  const pendingOrders = relevantOrders.filter(p => p.status === 'pending').length;
+
+  const handleDownloadReport = () => {
+    const doc = new jsPDF();
+    
+    // Title
+    doc.setFontSize(20);
+    doc.text('StockPILE Report', 14, 22);
+    
+    // Metadata
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
+    doc.text(`Time Range: ${t(`dashboard.filter.${timeRange}`)}`, 14, 35);
+    
+    let currentY = 45;
+
+    // Section 1: Key Metrics
+    doc.setFontSize(14);
+    doc.text('Key Metrics', 14, currentY);
+    currentY += 5;
+    
+    autoTable(doc, {
+        startY: currentY,
+        head: [['Metric', 'Value']],
+        body: [
+            ['Total Stock Items', totalStockCount],
+            ['Total Revenue (Selected Period)', formatCurrency(filteredSalesRevenue)],
+            ['Low Stock Batches', lowStockItems],
+            ['Pending Orders', pendingOrders]
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: [79, 70, 229] } // Indigo 600
+    });
+    
+    // @ts-ignore - jspdf-autotable adds lastAutoTable to the doc instance
+    currentY = (doc as any).lastAutoTable.finalY + 15;
+
+    // Section 2: Top Selling Products
+    doc.setFontSize(14);
+    doc.text('Top Selling Products', 14, currentY);
+    currentY += 5;
+
+    autoTable(doc, {
+        startY: currentY,
+        head: [['Product', 'Quantity Sold']],
+        body: topSellingData.map(item => [item.name, item.quantity]),
+        theme: 'striped',
+        headStyles: { fillColor: [16, 185, 129] } // Emerald 500
+    });
+
+    // @ts-ignore
+    currentY = (doc as any).lastAutoTable.finalY + 15;
+
+    // Section 3: Stock by Category
+    doc.setFontSize(14);
+    doc.text('Stock by Category', 14, currentY);
+    currentY += 5;
+
+    autoTable(doc, {
+        startY: currentY,
+        head: [['Category', 'Quantity']],
+        body: stockByCategoryData.map(item => [item.name, item.value]),
+        theme: 'striped',
+        headStyles: { fillColor: [139, 92, 246] } // Violet 500
+    });
+
+    doc.save(`stockpile_report_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-10">
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{t('dashboard.title')}</h1>
@@ -83,7 +256,11 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
                 <option value="lastTrimester">{t('dashboard.filter.lastTrimester')}</option>
                 <option value="lastYear">{t('dashboard.filter.lastYear')}</option>
             </select>
-            <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md shadow-indigo-200 transition-colors">
+            <button 
+                onClick={handleDownloadReport}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md shadow-indigo-200 transition-colors flex items-center gap-2"
+            >
+                <Download className="w-4 h-4" />
                 {t('dashboard.downloadReport')}
             </button>
         </div>
@@ -93,10 +270,10 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title={t('dashboard.totalInventory')}
-          value={totalStockCount.toString()} 
-          subtitle={t('dashboard.itemsInStock')}
+          value={isStaff ? 'N/A' : totalStockCount.toString()} 
+          subtitle={isStaff ? 'Restricted Access' : t('dashboard.itemsInStock')}
           icon={Package}
-          trend="+12%"
+          trend={isStaff ? '' : "+12%"}
           trendUp={true}
           variant="blue"
           onClick={() => onNavigate('inventory')}
@@ -113,33 +290,38 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
         />
         <StatCard 
           title={t('dashboard.lowStock')}
-          value={lowStockItems.toString()} 
-          subtitle={t('dashboard.batchesBelowThreshold')}
+          value={isStaff ? 'N/A' : lowStockItems.toString()} 
+          subtitle={isStaff ? 'Restricted Access' : t('dashboard.batchesBelowThreshold')}
           icon={AlertCircle}
-          trend="Action needed"
+          trend={isStaff ? '' : t('dashboard.actionNeeded')}
           trendUp={false}
           variant="red"
           onClick={() => onNavigate('inventory')}
         />
         <StatCard 
           title={t('dashboard.pendingOrders')}
-          value={pendingOrders.toString()} 
-          subtitle={t('dashboard.awaitingDelivery')}
+          value={isStaff ? 'N/A' : pendingOrders.toString()} 
+          subtitle={isStaff ? 'Restricted Access' : t('dashboard.awaitingDelivery')}
           icon={ShoppingCart}
-          trend="2 arriving"
+          trend={isStaff ? '' : t('dashboard.arriving', { count: pendingOrders })}
           trendUp={true}
           variant="purple"
-          onClick={() => onNavigate('procurement')}
+          onClick={() => !isStaff && onNavigate('procurement')}
         />
       </div>
 
-      {/* Charts Section */}
+      {/* Main Charts Section - Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)]">
           <div className="flex items-center justify-between mb-8">
-            <div>
-                 <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('dashboard.revenueAnalytics')}</h2>
-                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">{t('dashboard.comparisonSalesProcurement')}</p>
+            <div className="flex items-center gap-3">
+                 <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                    <TrendingUp className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                 </div>
+                 <div>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('dashboard.revenueAnalytics')}</h2>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">{t('dashboard.comparisonSalesProcurement')}</p>
+                 </div>
             </div>
           </div>
           <div className="h-80 w-full">
@@ -147,8 +329,8 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
@@ -184,7 +366,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
                     type="monotone" 
                     dataKey="sales" 
                     name="Sales Revenue"
-                    stroke="#4f46e5" 
+                    stroke="#6366f1" 
                     strokeWidth={3}
                     fillOpacity={1} 
                     fill="url(#colorSales)" 
@@ -204,7 +386,12 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] flex flex-col">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-6">{t('dashboard.recentActivity')}</h2>
+          <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                <Activity className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('dashboard.recentActivity')}</h2>
+          </div>
           <div className="space-y-6 flex-1 overflow-auto pr-2 custom-scrollbar">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-start gap-4 group cursor-pointer">
@@ -226,7 +413,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                     {i % 2 === 0 
                         ? t('dashboard.activity.saleDesc', { id: '2490', customer: 'Acme Corp.' }) 
-                        : t('dashboard.activity.batchDesc', { id: 'B-902', count: '50' })
+                        : t('dashboard.activity.batchDesc', { id: 'B-902', count: 50 })
                     }
                   </p>
                 </div>
@@ -241,6 +428,212 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
           </button>
         </div>
       </div>
+
+      {/* Additional Insights Section - Row 2 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        
+        {/* Pane 1: Stock by Category (Pie Chart) */}
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] flex flex-col">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-violet-50 dark:bg-violet-900/20 rounded-lg">
+                    <PieChartIcon className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                </div>
+                <div>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('dashboard.stockByCategory')}</h2>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">{t('dashboard.distribution')}</p>
+                </div>
+            </div>
+            
+            <div className="h-64 w-full flex-1 flex items-center justify-center">
+               {stockByCategoryData.length > 0 ? (
+                 <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Pie
+                            data={stockByCategoryData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius="60%"
+                            outerRadius="80%"
+                            paddingAngle={5}
+                            dataKey="value"
+                            stroke="none"
+                            cornerRadius={5}
+                        >
+                            {stockByCategoryData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip 
+                            contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 10px rgba(0,0,0,0.1)'}}
+                        />
+                        <Legend 
+                            iconType="circle" 
+                            layout="horizontal" 
+                            verticalAlign="bottom" 
+                            align="center"
+                            wrapperStyle={{fontSize: '12px', color: '#64748b', paddingTop: '10px'}} 
+                        />
+                    </PieChart>
+                 </ResponsiveContainer>
+               ) : (
+                   <div className="flex flex-col items-center justify-center text-slate-400">
+                       <PieChartIcon className="w-12 h-12 mb-3 opacity-20" />
+                       <p className="text-sm font-medium">No stock data available</p>
+                   </div>
+               )}
+            </div>
+        </div>
+
+        {/* Pane 2: Top Selling Products (Bar Chart) */}
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] lg:col-span-2 flex flex-col">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-pink-50 dark:bg-pink-900/20 rounded-lg">
+                    <BarChart3 className="w-5 h-5 text-pink-600 dark:text-pink-400" />
+                </div>
+                <div>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('dashboard.topSellingProducts')}</h2>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">{t('dashboard.bestSellers')}</p>
+                </div>
+            </div>
+            
+            <div className="h-64 w-full flex-1">
+                {topSellingData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                            data={topSellingData}
+                            layout="vertical"
+                            margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                            barSize={20}
+                        >
+                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" className="dark:stroke-slate-800" />
+                            <XAxis type="number" hide />
+                            <YAxis 
+                                dataKey="name" 
+                                type="category" 
+                                width={120}
+                                tick={{fontSize: 12, fill: '#64748b', fontWeight: 500}}
+                                axisLine={false}
+                                tickLine={false}
+                            />
+                            <Tooltip 
+                                cursor={{fill: 'transparent'}}
+                                contentStyle={{
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                                }}
+                            />
+                            <Bar dataKey="quantity" fill="#8b5cf6" radius={[0, 6, 6, 0]}>
+                                {topSellingData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                        <BarChart3 className="w-12 h-12 mb-3 text-slate-300 dark:text-slate-600" />
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No sales data available</p>
+                        <p className="text-xs text-slate-400 mt-1">Start selling products to see trends here</p>
+                    </div>
+                )}
+            </div>
+        </div>
+
+      </div>
+
+      {/* Additional Insights Section - Row 3 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+           {/* Pane 3: Order Status Overview (Donut Chart) */}
+           <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] flex flex-col">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                    <PieChartIcon className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('dashboard.orderStatus')}</h2>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">{t('dashboard.statusDistribution')}</p>
+                </div>
+            </div>
+            
+            <div className="h-64 w-full flex-1">
+               {orderStatusData.length > 0 ? (
+                 <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Pie
+                            data={orderStatusData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius="60%"
+                            outerRadius="80%"
+                            paddingAngle={5}
+                            dataKey="value"
+                            stroke="none"
+                            cornerRadius={5}
+                        >
+                            {orderStatusData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip 
+                            contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 10px rgba(0,0,0,0.1)'}}
+                        />
+                        <Legend 
+                            iconType="circle" 
+                            layout="horizontal" 
+                            verticalAlign="bottom" 
+                            align="center"
+                            wrapperStyle={{fontSize: '12px', color: '#64748b', paddingTop: '10px'}} 
+                        />
+                    </PieChart>
+                 </ResponsiveContainer>
+               ) : (
+                   <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-50/50 dark:bg-slate-800/20 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                       <PieChartIcon className="w-12 h-12 mb-3 text-slate-300 dark:text-slate-600" />
+                       <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No orders available</p>
+                       <p className="text-xs text-slate-400 mt-1">Create purchase orders to see distribution</p>
+                   </div>
+               )}
+            </div>
+        </div>
+
+         {/* Pane 4: Monthly Trend (Line/Area Chart) */}
+         <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] flex flex-col">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-teal-50 dark:bg-teal-900/20 rounded-lg">
+                    <TrendingUp className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                </div>
+                <div>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('dashboard.monthlySales')}</h2>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">{t('dashboard.salesTrend')}</p>
+                </div>
+            </div>
+            
+            <div className="h-64 w-full flex-1">
+                <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={monthlySalesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <defs>
+                            <linearGradient id="colorSalesGrow" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:stroke-slate-800" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+                        <Tooltip 
+                            contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 10px rgba(0,0,0,0.1)'}}
+                        />
+                        <Area type="monotone" dataKey="sales" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorSalesGrow)" />
+                    </AreaChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+
+      </div>
+
+      {/* Report Download */}
     </div>
   );
 }

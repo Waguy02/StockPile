@@ -25,9 +25,17 @@ import {
 } from '../ui/dropdown-menu';
 
 export function Inventory() {
-  const { products, categories, stockBatches, isLoading, refresh } = useStore();
+  const { products, categories, stockBatches, isLoading, refresh, currentUser } = useStore();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'products' | 'batches'>('products');
+
+  // If staff, force active tab to products
+  React.useEffect(() => {
+    if (currentUser?.role === 'staff' && activeTab === 'batches') {
+      setActiveTab('products');
+    }
+  }, [currentUser, activeTab]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
@@ -115,19 +123,21 @@ export function Inventory() {
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-500 rounded-full mx-6"></div>
                 )}
             </button>
-            <button
-                onClick={() => setActiveTab('batches')}
-                className={`relative px-6 py-4 text-sm font-semibold transition-all duration-200 rounded-t-lg ${
-                activeTab === 'batches'
-                    ? 'text-indigo-600 dark:text-indigo-400'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
-            >
-                {t('inventory.tab.stockBatches')}
-                {activeTab === 'batches' && (
-                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-500 rounded-full mx-6"></div>
-                )}
-            </button>
+            {currentUser?.role !== 'staff' && (
+              <button
+                  onClick={() => setActiveTab('batches')}
+                  className={`relative px-6 py-4 text-sm font-semibold transition-all duration-200 rounded-t-lg ${
+                  activeTab === 'batches'
+                      ? 'text-indigo-600 dark:text-indigo-400'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+              >
+                  {t('inventory.tab.stockBatches')}
+                  {activeTab === 'batches' && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-500 rounded-full mx-6"></div>
+                  )}
+              </button>
+            )}
             </div>
         </div>
         

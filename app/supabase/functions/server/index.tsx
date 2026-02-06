@@ -27,8 +27,9 @@ app.get(`${BASE_PATH}/health`, (c) => c.json({ status: "ok" }));
 
 // Seed endpoint
 app.post(`${BASE_PATH}/seed`, async (c) => {
+  const force = c.req.query('force') === 'true';
   const isSeeded = await kv.get('system:seeded');
-  if (isSeeded) {
+  if (isSeeded && !force) {
     return c.json({ message: "Already seeded" });
   }
   const result = await seedDatabase();
@@ -243,6 +244,28 @@ app.delete(`${BASE_PATH}/finance/:id`, async (c) => {
 app.get(`${BASE_PATH}/admin`, async (c) => {
   const managers = await getByPrefix('manager:');
   return c.json(managers);
+});
+
+app.post(`${BASE_PATH}/admin/user`, async (c) => {
+  const body = await c.req.json();
+  const id = body.id || crypto.randomUUID();
+  const manager = { ...body, id };
+  await kv.set(`manager:${id}`, manager);
+  return c.json(manager);
+});
+
+app.put(`${BASE_PATH}/admin/user/:id`, async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const manager = { ...body, id };
+  await kv.set(`manager:${id}`, manager);
+  return c.json(manager);
+});
+
+app.delete(`${BASE_PATH}/admin/user/:id`, async (c) => {
+  const id = c.req.param("id");
+  await kv.del(`manager:${id}`);
+  return c.json({ success: true });
 });
 
 // Aggregate Dashboard Data

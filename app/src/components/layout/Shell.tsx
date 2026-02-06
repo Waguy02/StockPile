@@ -14,6 +14,7 @@ import {
   Sun,
   Moon
 } from 'lucide-react';
+import { useStore } from '../../lib/StoreContext';
 import { navItems, ViewState } from '../../lib/data';
 import { ConnectionStatus } from '../common/ConnectionStatus';
 import { useTheme } from '../theme-provider';
@@ -28,10 +29,19 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useTheme();
+  const { currentUser, managers, setCurrentUser } = useStore();
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
   };
+
+  const filteredNavItems = navItems.filter(item => {
+    if (!currentUser) return true;
+    if (currentUser.role === 'staff') {
+      return !['procurement', 'finance', 'admin'].includes(item.id);
+    }
+    return true;
+  });
 
   return (
     <div className="flex h-screen bg-slate-50/50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans overflow-hidden">
@@ -42,14 +52,14 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
             <Sparkles className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-white">StockPILE</h1>
+            <h1 className="text-xl font-bold tracking-tight text-white">Odicam</h1>
             <p className="text-xs text-slate-400 font-medium">{t('shell.enterpriseManager')}</p>
           </div>
         </div>
         
         <nav className="flex-1 overflow-y-auto px-4 py-4">
           <ul className="space-y-1">
-            {navItems.map((item) => {
+            {filteredNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentView === item.id;
               return (
@@ -78,15 +88,23 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-200 to-yellow-400 p-[2px]">
               <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center">
-                 <span className="text-xs font-bold text-white">AM</span>
+                 <span className="text-xs font-bold text-white">
+                    {currentUser?.name ? currentUser.name.substring(0, 2).toUpperCase() : 'US'}
+                 </span>
               </div>
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-semibold text-white truncate">Alice Manager</p>
-              <p className="text-xs text-slate-500 truncate">{t('shell.administrator')}</p>
+              <p className="text-sm font-semibold text-white truncate">{currentUser?.name || 'Guest'}</p>
+              <p className="text-xs text-slate-500 truncate">
+                {currentUser?.role === 'admin' ? t('shell.administrator') : 
+                 currentUser?.role === 'manager' ? 'Manager' : 'Staff'}
+              </p>
             </div>
           </div>
-          <button className="flex items-center justify-center gap-2 w-full py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-slate-700">
+          <button 
+            onClick={() => setCurrentUser(null)}
+            className="flex items-center justify-center gap-2 w-full py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-slate-700"
+          >
             <LogOut className="w-3.5 h-3.5" />
             {t('shell.signOut')}
           </button>
@@ -175,7 +193,7 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
             </button>
           </div>
           <nav className="p-4 space-y-1">
-             {navItems.map((item) => {
+             {filteredNavItems.map((item) => {
               const Icon = item.icon;
               return (
                 <button

@@ -12,7 +12,9 @@ interface StoreState {
   purchaseOrders: types.PurchaseOrder[];
   sales: types.Sale[];
   payments: types.Payment[];
-  managers: any[];
+  managers: types.Manager[];
+  currentUser: types.Manager | null;
+  setCurrentUser: (user: types.Manager | null) => void;
   isLoading: boolean;
   refresh: () => Promise<void>;
 }
@@ -20,6 +22,7 @@ interface StoreState {
 const StoreContext = createContext<StoreState | undefined>(undefined);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
+  const [currentUser, setCurrentUser] = React.useState<types.Manager | null>(null);
   const queryClient = useQueryClient();
 
   const { data, isLoading, refetch } = useQuery({
@@ -36,6 +39,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           api.getAllData(),
           api.getAdmin()
         ]);
+        
+        // Mock current user if not set
+        if (!currentUser && managers && managers.length > 0) {
+           // Auto-login during dev for convenience
+           const admin = managers.find((m: any) => m.role === 'admin') || managers[0];
+           setCurrentUser(admin);
+        } else if (!currentUser && (!managers || managers.length === 0)) {
+            // If no users at all (fresh start), maybe we need to seed or allow default admin
+            // For now, let's wait for seed.
+        }
+
         return {
           categories: inventory.categories || [],
           products: inventory.products || [],
@@ -69,6 +83,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     sales: data?.sales || [],
     payments: data?.payments || [],
     managers: data?.managers || [],
+    currentUser,
+    setCurrentUser,
     isLoading,
     refresh
   };

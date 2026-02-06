@@ -8,6 +8,8 @@ import {
   Download,
   Loader2
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useStore } from '../../lib/StoreContext';
 import { formatCurrency } from '../../lib/formatters';
 
@@ -34,6 +36,62 @@ export function Finance() {
   const filteredPayments = getFilteredPayments();
   const totalInflow = filteredPayments.filter(p => p.referenceType === 'sale').reduce((acc, p) => acc + p.amount, 0);
   const totalOutflow = filteredPayments.filter(p => p.referenceType === 'purchase_order').reduce((acc, p) => acc + p.amount, 0);
+
+  const handleDownloadReport = () => {
+    const doc = new jsPDF();
+    
+    // Title
+    doc.setFontSize(20);
+    doc.text('StockPILE Financial Report', 14, 22);
+    
+    // Metadata
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
+    doc.text(`Time Range: ${t(`dashboard.filter.${timeRange}`)}`, 14, 35);
+    
+    let currentY = 45;
+
+    // Metrics
+    doc.setFontSize(14);
+    doc.text('Financial Summary', 14, currentY);
+    currentY += 5;
+
+    autoTable(doc, {
+        startY: currentY,
+        head: [['Metric', 'Amount']],
+        body: [
+            ['Total Revenue (Inflow)', formatCurrency(totalInflow)],
+            ['Total Expenses (Outflow)', formatCurrency(totalOutflow)],
+            ['Net Flow', formatCurrency(totalInflow - totalOutflow)]
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: [79, 70, 229] }
+    });
+
+    // @ts-ignore
+    currentY = (doc as any).lastAutoTable.finalY + 15;
+
+    // Transactions
+    doc.setFontSize(14);
+    doc.text('Transaction History', 14, currentY);
+    currentY += 5;
+
+    autoTable(doc, {
+        startY: currentY,
+        head: [['Date', 'Type', 'Reference', 'Processed By', 'Amount']],
+        body: filteredPayments.map(p => [
+            p.date,
+            p.referenceType === 'sale' ? t('finance.incoming') : t('finance.outgoing'),
+            p.referenceType === 'sale' ? `Sale #${p.referenceId.toUpperCase()}` : `PO #${p.referenceId.toUpperCase()}`,
+            getManagerName(p.managerId),
+            (p.referenceType === 'sale' ? '+' : '-') + formatCurrency(p.amount)
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [16, 185, 129] }
+    });
+
+    doc.save(`stockpile_financial_report_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
 
   if (isLoading) {
     return (
@@ -62,7 +120,10 @@ export function Finance() {
                 <option value="lastTrimester">{t('dashboard.filter.lastTrimester')}</option>
                 <option value="lastYear">{t('dashboard.filter.lastYear')}</option>
             </select>
-          <button className="flex items-center px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium text-sm transition-all shadow-sm hover:border-slate-300 dark:hover:border-slate-700">
+          <button 
+            onClick={handleDownloadReport}
+            className="flex items-center px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium text-sm transition-all shadow-sm hover:border-slate-300 dark:hover:border-slate-700"
+          >
             <Download className="w-4 h-4 mr-2 text-slate-500 dark:text-slate-400" />
             {t('finance.exportReport')}
           </button>

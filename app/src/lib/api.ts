@@ -73,4 +73,7 @@ export const api = {
   createPayment: (data: any) => fetchWithAuth('/finance', { method: 'POST', body: JSON.stringify(data) }),
   updatePayment: (id: string, data: any) => fetchWithAuth(`/finance/${encodeId(id)}`, { method: 'PUT', body: JSON.stringify(data) }),
   deletePayment: (id: string) => fetchWithAuth(`/finance/${encodeId(id)}`, { method: 'DELETE' }),
+  createUser: (data: any) => fetchWithAuth('/admin/user', { method: 'POST', body: JSON.stringify(data) }),
+  updateUser: (id: string, data: any) => fetchWithAuth(`/admin/user/${encodeId(id)}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteUser: (id: string) => fetchWithAuth(`/admin/user/${encodeId(id)}`, { method: 'DELETE' }),
 };

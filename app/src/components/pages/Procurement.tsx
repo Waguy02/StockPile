@@ -38,9 +38,13 @@ export function Procurement() {
     setIsCreateOpen(true);
   };
 
-  const handleDeleteOrder = async (id: string) => {
+  const handleDeleteOrder = async (po: any) => {
+    if (po.status === 'completed') {
+        alert(t('common.deleteCompleted'));
+        return;
+    }
     if (confirm(t('common.confirmDelete', { item: 'purchase order' }))) {
-        await api.deletePO(id);
+        await api.deletePO(po.id);
         await refresh();
     }
   };
@@ -179,7 +183,7 @@ export function Procurement() {
                             <Edit className="w-4 h-4 mr-2" />
                             {t('common.edit')}
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteOrder(po.id)}>
+                        <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteOrder(po)}>
                             <Trash2 className="w-4 h-4 mr-2" />
                             {t('common.delete')}
                         </DropdownMenuItem>

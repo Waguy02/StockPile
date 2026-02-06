@@ -89,6 +89,15 @@ export type Payment = {
   status: 'completed' | 'pending';
 };
 
+export type Manager = {
+  id: string;
+  name: string;
+  role: 'admin' | 'manager' | 'staff';
+  lastActive?: string;
+  status: 'active' | 'inactive';
+  password?: string; // Optional for frontend security, but present in data
+};
+
 // --- Navigation ---
 
 export type ViewState = 'dashboard' | 'inventory' | 'partners' | 'procurement' | 'sales' | 'finance' | 'admin';

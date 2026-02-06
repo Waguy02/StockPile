@@ -37,9 +37,13 @@ export function Sales() {
     setIsCreateOpen(true);
   };
 
-  const handleDeleteSale = async (id: string) => {
+  const handleDeleteSale = async (sale: any) => {
+    if (sale.status === 'completed') {
+        alert(t('common.deleteCompleted'));
+        return;
+    }
     if (confirm(t('common.confirmDelete', { item: 'sale' }))) {
-        await api.deleteSale(id);
+        await api.deleteSale(sale.id);
         await refresh();
     }
   };
@@ -173,7 +177,7 @@ export function Sales() {
                                     <Edit className="w-4 h-4 mr-2" />
                                     {t('common.edit')}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteSale(sale.id)}>
+                                <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteSale(sale)}>
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     {t('common.delete')}
                                 </DropdownMenuItem>
