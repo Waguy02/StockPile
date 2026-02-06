@@ -13,6 +13,8 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { queryClient, persister } from './lib/queryClient';
 
+import { Toaster } from './components/ui/sonner';
+
 function AppContent() {
   const [currentView, setCurrentView] = useState<ViewState>('dashboard');
 
@@ -40,6 +42,7 @@ function AppContent() {
   return (
     <Layout currentView={currentView} onNavigate={setCurrentView}>
       {renderView()}
+      <Toaster />
     </Layout>
   );
 }

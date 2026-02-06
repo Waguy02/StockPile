@@ -26,6 +26,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { toast } from "sonner";
 import { useStore } from '../../lib/StoreContext';
 import { api } from '../../lib/api';
 
@@ -99,9 +100,16 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
   const onSubmit = async (data: any) => {
     setIsLoading(true);
     try {
+        if (order && order.status === 'completed') {
+            toast.error("Completed orders cannot be modified");
+            setIsLoading(false);
+            return;
+        }
+
         if (!data.partnerId) {
-             console.error("Missing partner ID");
-             return; // Prevent submission without partner
+             toast.error(`Please select a ${type === 'purchase' ? 'provider' : 'customer'}`);
+             setIsLoading(false);
+             return; 
         }
 
         const payload = {
@@ -121,6 +129,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                 // Check if we are marking as received/completed
                 if (data.status === 'completed' && order.status !== 'completed') {
                     // Create stock batches for each item
+                    let batchesCreated = 0;
                     for (const item of payload.items) {
                         if (item.productId && item.quantity > 0) {
                             try {
@@ -132,20 +141,24 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                                     entryDate: new Date().toISOString().split('T')[0],
                                     status: 'active'
                                 });
+                                batchesCreated++;
                             } catch (err) {
                                 console.error("Failed to create batch for item", item, err);
-                                // Continue to next item or fail? 
-                                // Ideally we should probably proceed but warn.
+                                toast.error(`Failed to create stock for one item`);
                             }
                         }
+                    }
+                    if (batchesCreated > 0) {
+                        toast.success(`${batchesCreated} stock batches created`);
                     }
                 }
 
                 await api.updatePO(order.id, {
                     ...order,
                     ...payload,
-                    providerId: data.partnerId,
+                    providerId: data.partnerId, // Ensure we send current partnerId
                 });
+                toast.success("Purchase order updated");
             } else {
                 const newPO = await api.createPO({
                     ...payload,
@@ -172,6 +185,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                         }
                     }
                 }
+                toast.success("Purchase order created");
             }
         } else {
             if (order) {
@@ -180,19 +194,22 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                     ...payload,
                     customerId: data.partnerId,
                 });
+                toast.success("Sale order updated");
             } else {
                 await api.createSale({
                     ...payload,
                     customerId: data.partnerId,
                     amountPaid: 0
                 });
+                toast.success("Sale order created");
             }
         }
         await refresh();
         onOpenChange(false);
         form.reset();
-    } catch (error) {
+    } catch (error: any) {
         console.error('Failed to save order', error);
+        toast.error(`Failed to save order: ${error.message || 'Unknown error'}`);
     } finally {
         setIsLoading(false);
     }

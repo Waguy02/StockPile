@@ -160,7 +160,11 @@ export function Procurement() {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                         <DropdownMenuItem className="cursor-pointer" onClick={() => handleEditOrder(po)}>
+                         <DropdownMenuItem 
+                          className="cursor-pointer" 
+                          onClick={() => handleEditOrder(po)}
+                          disabled={po.status === 'completed'}
+                        >
                             <Edit className="w-4 h-4 mr-2" />
                             Edit
                         </DropdownMenuItem>
