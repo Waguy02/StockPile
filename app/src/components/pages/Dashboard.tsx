@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   TrendingUp, 
   AlertCircle, 
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useStore } from '../../lib/StoreContext';
+import { formatCurrency } from '../../lib/formatters';
 
 const chartData = [
   { name: 'Jan', sales: 4000, orders: 2400 },
@@ -25,6 +27,7 @@ const chartData = [
 
 export function Dashboard() {
   const { stockBatches, sales, purchaseOrders, isLoading } = useStore();
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -43,17 +46,17 @@ export function Dashboard() {
     <div className="space-y-8">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
-          <p className="text-slate-500 mt-2 text-sm font-medium">Overview of your inventory and performance metrics.</p>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{t('dashboard.title')}</h1>
+          <p className="text-slate-500 mt-2 text-sm font-medium">{t('dashboard.subtitle')}</p>
         </div>
         <div className="flex gap-2">
             <select className="bg-white border-0 ring-1 ring-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm cursor-pointer">
-                <option>Last 7 Days</option>
-                <option>Last 30 Days</option>
-                <option>This Quarter</option>
+                <option>{t('dashboard.filter.last7Days')}</option>
+                <option>{t('dashboard.filter.last30Days')}</option>
+                <option>{t('dashboard.filter.thisQuarter')}</option>
             </select>
             <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md shadow-indigo-200 transition-colors">
-                Download Report
+                {t('dashboard.downloadReport')}
             </button>
         </div>
       </div>
@@ -61,36 +64,36 @@ export function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
-          title="Total Inventory" 
+          title={t('dashboard.totalInventory')}
           value={totalStockCount.toString()} 
-          subtitle="Items in stock" 
+          subtitle={t('dashboard.itemsInStock')}
           icon={Package}
           trend="+12%"
           trendUp={true}
           variant="blue"
         />
         <StatCard 
-          title="Total Revenue" 
-          value={`$${totalSalesRevenue.toLocaleString()}`} 
-          subtitle="Current fiscal year" 
+          title={t('dashboard.totalRevenue')}
+          value={formatCurrency(totalSalesRevenue)} 
+          subtitle={t('dashboard.currentFiscalYear')}
           icon={DollarSign}
           trend="+8.2%"
           trendUp={true}
           variant="green"
         />
         <StatCard 
-          title="Low Stock" 
+          title={t('dashboard.lowStock')}
           value={lowStockItems.toString()} 
-          subtitle="Batches below threshold" 
+          subtitle={t('dashboard.batchesBelowThreshold')}
           icon={AlertCircle}
           trend="Action needed"
           trendUp={false}
           variant="red"
         />
         <StatCard 
-          title="Pending Orders" 
+          title={t('dashboard.pendingOrders')}
           value={pendingOrders.toString()} 
-          subtitle="Awaiting delivery" 
+          subtitle={t('dashboard.awaitingDelivery')}
           icon={ShoppingCart}
           trend="2 arriving"
           trendUp={true}
@@ -103,8 +106,8 @@ export function Dashboard() {
         <div className="lg:col-span-2 bg-white p-8 rounded-2xl border border-slate-100 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)]">
           <div className="flex items-center justify-between mb-8">
             <div>
-                 <h2 className="text-lg font-bold text-slate-900">Revenue Analytics</h2>
-                 <p className="text-xs text-slate-400 mt-1 font-medium">Comparison between Sales and Procurement costs</p>
+                 <h2 className="text-lg font-bold text-slate-900">{t('dashboard.revenueAnalytics')}</h2>
+                 <p className="text-xs text-slate-400 mt-1 font-medium">{t('dashboard.comparisonSalesProcurement')}</p>
             </div>
           </div>
           <div className="h-80 w-full">
@@ -169,7 +172,7 @@ export function Dashboard() {
         </div>
 
         <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] flex flex-col">
-          <h2 className="text-lg font-bold text-slate-900 mb-6">Recent Activity</h2>
+          <h2 className="text-lg font-bold text-slate-900 mb-6">{t('dashboard.recentActivity')}</h2>
           <div className="space-y-6 flex-1 overflow-auto pr-2 custom-scrollbar">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-start gap-4 group cursor-pointer">
@@ -183,15 +186,15 @@ export function Dashboard() {
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
                      <p className="text-sm font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                        {i % 2 === 0 ? 'New Sale Recorded' : 'Stock Batch Received'}
+                        {i % 2 === 0 ? t('dashboard.activity.newSale') : t('dashboard.activity.stockBatch')}
                     </p>
                     <span className="text-[10px] text-slate-400 font-medium bg-slate-50 px-2 py-0.5 rounded-full">2h</span>
                   </div>
                  
                   <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                     {i % 2 === 0 
-                        ? 'Order #2490 processed for Acme Corp.' 
-                        : 'Batch #B-902 added to Inventory (50 units).'
+                        ? t('dashboard.activity.saleDesc', { id: '2490', customer: 'Acme Corp.' }) 
+                        : t('dashboard.activity.batchDesc', { id: 'B-902', count: '50' })
                     }
                   </p>
                 </div>
@@ -199,7 +202,7 @@ export function Dashboard() {
             ))}
           </div>
           <button className="w-full mt-6 py-3 text-sm text-indigo-600 font-semibold bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all duration-200">
-            View All Activity
+            {t('dashboard.viewAllActivity')}
           </button>
         </div>
       </div>

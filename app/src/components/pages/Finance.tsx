@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Search, 
   Filter, 
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
 import { api } from '../../lib/api';
+import { formatCurrency } from '../../lib/formatters';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,10 +22,11 @@ import {
 
 export function Finance() {
   const { payments, managers, isLoading, refresh } = useStore();
-  const getManagerName = (id: string) => managers.find(m => m.id === id)?.name || 'Unknown';
+  const { t } = useTranslation();
+  const getManagerName = (id: string) => managers.find(m => m.id === id)?.name || t('common.unknown');
 
   const handleDeletePayment = async (id: string) => {
-    if (confirm('Are you sure you want to delete this payment record?')) {
+    if (confirm(t('common.confirmDelete', { item: 'payment record' }))) {
         await api.deletePayment(id);
         await refresh();
     }
@@ -44,20 +47,20 @@ export function Finance() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Financials</h1>
-          <p className="text-slate-500 mt-2 text-sm font-medium">Track your revenue streams and expenses.</p>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{t('finance.title')}</h1>
+          <p className="text-slate-500 mt-2 text-sm font-medium">{t('finance.subtitle')}</p>
         </div>
         <button className="flex items-center px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 font-medium text-sm transition-all shadow-sm hover:border-slate-300">
           <Download className="w-4 h-4 mr-2 text-slate-500" />
-          Export Report
+          {t('finance.exportReport')}
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex items-center justify-between group hover:shadow-lg transition-all">
           <div>
-            <p className="text-sm font-medium text-slate-500">Total Revenue</p>
-            <h3 className="text-3xl font-bold text-emerald-600 mt-1 tracking-tight group-hover:scale-105 transition-transform origin-left">+${totalInflow.toLocaleString()}</h3>
+            <p className="text-sm font-medium text-slate-500">{t('finance.totalRevenue')}</p>
+            <h3 className="text-3xl font-bold text-emerald-600 mt-1 tracking-tight group-hover:scale-105 transition-transform origin-left">+{formatCurrency(totalInflow)}</h3>
           </div>
           <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
             <ArrowUpRight className="w-6 h-6" />
@@ -66,8 +69,8 @@ export function Finance() {
         
         <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex items-center justify-between group hover:shadow-lg transition-all">
           <div>
-            <p className="text-sm font-medium text-slate-500">Total Expenses</p>
-            <h3 className="text-3xl font-bold text-rose-600 mt-1 tracking-tight group-hover:scale-105 transition-transform origin-left">-${totalOutflow.toLocaleString()}</h3>
+            <p className="text-sm font-medium text-slate-500">{t('finance.totalExpenses')}</p>
+            <h3 className="text-3xl font-bold text-rose-600 mt-1 tracking-tight group-hover:scale-105 transition-transform origin-left">-{formatCurrency(totalOutflow)}</h3>
           </div>
           <div className="p-3 bg-rose-50 text-rose-600 rounded-xl">
             <ArrowDownRight className="w-6 h-6" />
@@ -76,9 +79,9 @@ export function Finance() {
 
         <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex items-center justify-between group hover:shadow-lg transition-all">
           <div>
-            <p className="text-sm font-medium text-slate-500">Net Flow</p>
+            <p className="text-sm font-medium text-slate-500">{t('finance.netFlow')}</p>
             <h3 className={`text-3xl font-bold mt-1 tracking-tight group-hover:scale-105 transition-transform origin-left ${(totalInflow - totalOutflow) >= 0 ? 'text-blue-600' : 'text-amber-600'}`}>
-              {(totalInflow - totalOutflow) >= 0 ? '+' : ''}${(totalInflow - totalOutflow).toLocaleString()}
+              {(totalInflow - totalOutflow) >= 0 ? '+' : ''}{formatCurrency(totalInflow - totalOutflow)}
             </h3>
           </div>
            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
@@ -89,7 +92,7 @@ export function Finance() {
 
       <div className="bg-white rounded-2xl border border-slate-200/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <h2 className="font-bold text-slate-900">Transaction History</h2>
+          <h2 className="font-bold text-slate-900">{t('finance.transactionHistory')}</h2>
           <div className="flex space-x-2">
             <button className="p-2 text-slate-500 hover:bg-white hover:text-indigo-600 rounded-lg transition-all hover:shadow-sm">
               <Search className="w-4.5 h-4.5" />
@@ -104,11 +107,11 @@ export function Finance() {
           <table className="w-full text-left text-sm text-slate-600">
              <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200 uppercase tracking-wider text-xs">
               <tr>
-                <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Type</th>
-                <th className="px-6 py-4">Reference</th>
-                <th className="px-6 py-4">Processed By</th>
-                <th className="px-6 py-4 text-right">Amount</th>
+                <th className="px-6 py-4">{t('finance.table.date')}</th>
+                <th className="px-6 py-4">{t('finance.table.type')}</th>
+                <th className="px-6 py-4">{t('finance.table.reference')}</th>
+                <th className="px-6 py-4">{t('finance.table.processedBy')}</th>
+                <th className="px-6 py-4 text-right">{t('finance.table.amount')}</th>
                 <th className="px-6 py-4 text-right"></th>
               </tr>
             </thead>
@@ -122,17 +125,17 @@ export function Finance() {
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
                         : 'bg-rose-50 text-rose-700 border-rose-100'
                     }`}>
-                      {payment.referenceType === 'sale' ? 'Incoming' : 'Outgoing'}
+                      {payment.referenceType === 'sale' ? t('finance.incoming') : t('finance.outgoing')}
                     </span>
                   </td>
                   <td className="px-6 py-4 font-mono text-xs text-slate-500">
-                    {payment.referenceType === 'sale' ? `Sale #${payment.referenceId.toUpperCase()}` : `PO #${payment.referenceId.toUpperCase()}`}
+                    {payment.referenceType === 'sale' ? t('finance.saleRef', { id: payment.referenceId.toUpperCase() }) : t('finance.poRef', { id: payment.referenceId.toUpperCase() })}
                   </td>
                   <td className="px-6 py-4">{getManagerName(payment.managerId)}</td>
                   <td className={`px-6 py-4 text-right font-bold font-mono ${
                     payment.referenceType === 'sale' ? 'text-emerald-600' : 'text-slate-900'
                   }`}>
-                    {payment.referenceType === 'sale' ? '+' : '-'}${payment.amount.toLocaleString()}
+                    {payment.referenceType === 'sale' ? '+' : '-'}{formatCurrency(payment.amount)}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <DropdownMenu>
@@ -144,7 +147,7 @@ export function Finance() {
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeletePayment(payment.id)}>
                                 <Trash2 className="w-4 h-4 mr-2" />
-                                Delete
+                                {t('common.delete')}
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

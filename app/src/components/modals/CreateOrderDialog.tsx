@@ -1,5 +1,6 @@
 import React from 'react';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import {
   Dialog,
@@ -38,7 +39,8 @@ interface CreateOrderDialogProps {
 }
 
 export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialogProps) {
-  const { providers, customers, products, refresh } = useStore();
+  const { providers, customers, products, stockBatches, refresh } = useStore();
+  const { t } = useTranslation();
   const form = useForm({
     defaultValues: {
       partnerId: '',
@@ -105,7 +107,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
     setIsLoading(true);
     try {
         if (order && order.status === 'completed' && data.status !== 'completed') {
-             toast.error("Cannot change status of a completed order");
+             toast.error(t('modals.createOrder.errors.completedStatus'));
              setIsLoading(false);
              return;
         }
@@ -116,7 +118,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
         // And if it is completed, we don't re-add stock (logic below handles this by checking status change).
 
         if (!data.partnerId) {
-             toast.error(`Please select a ${type === 'purchase' ? 'provider' : 'customer'}`);
+             toast.error(t('modals.createOrder.errors.selectPartner', { type: type === 'purchase' ? t('modals.createOrder.providerLabel') : t('modals.createOrder.customerLabel') }));
              setIsLoading(false);
              return; 
         }
@@ -134,6 +136,22 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                 unitPrice: Number(i.unitPrice)
             })) || [],
         };
+
+        if (type === 'sale') {
+            for (const item of payload.items) {
+                if (item.productId && item.quantity > 0) {
+                    const available = stockBatches
+                        .filter(b => b.productId === item.productId)
+                        .reduce((sum, b) => sum + b.quantity, 0);
+                    
+                    if (item.quantity > available) {
+                        toast.error(t('modals.createOrder.errors.insufficientStock'));
+                        setIsLoading(false);
+                        return;
+                    }
+                }
+            }
+        }
 
         if (type === 'purchase') {
             if (order) {
@@ -155,12 +173,12 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                                 batchesCreated++;
                             } catch (err) {
                                 console.error("Failed to create batch for item", item, err);
-                                toast.error(`Failed to create stock for one item`);
+                                toast.error(t('modals.createOrder.errors.stockCreation'));
                             }
                         }
                     }
                     if (batchesCreated > 0) {
-                        toast.success(`${batchesCreated} stock batches created`);
+                        toast.success(t('modals.createOrder.success.batchesCreated', { count: batchesCreated }));
                     }
                 }
 
@@ -169,7 +187,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                     ...payload,
                     providerId: data.partnerId, // Ensure we send current partnerId
                 });
-                toast.success("Purchase order updated");
+                toast.success(t('modals.createOrder.success.purchaseUpdated'));
             } else {
                 await api.createPO({
                     ...payload,
@@ -195,7 +213,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                         }
                     }
                 }
-                toast.success("Purchase order created");
+                toast.success(t('modals.createOrder.success.purchaseCreated'));
             }
         } else {
             if (order) {
@@ -204,14 +222,14 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                     ...payload,
                     customerId: data.partnerId,
                 });
-                toast.success("Sale order updated");
+                toast.success(t('modals.createOrder.success.saleUpdated'));
             } else {
                 await api.createSale({
                     ...payload,
                     customerId: data.partnerId,
                     amountPaid: Number(data.amountPaid)
                 });
-                toast.success("Sale order created");
+                toast.success(t('modals.createOrder.success.saleCreated'));
             }
         }
         await refresh();
@@ -219,7 +237,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
         form.reset();
     } catch (error: any) {
         console.error('Failed to save order', error);
-        toast.error(`Failed to save order: ${error.message || 'Unknown error'}`);
+        toast.error(t('modals.createOrder.errors.saveFailed', { error: error.message || t('common.unknown') }));
     } finally {
         setIsLoading(false);
     }
@@ -229,9 +247,13 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{order ? 'Edit' : 'Create'} {type === 'purchase' ? 'Purchase' : 'Sales'} Order</DialogTitle>
+          <DialogTitle>
+            {order ? t('modals.createOrder.editTitle', { type: type === 'purchase' ? t('modals.createOrder.purchase') : t('modals.createOrder.sale') }) 
+                   : t('modals.createOrder.createTitle', { type: type === 'purchase' ? t('modals.createOrder.purchase') : t('modals.createOrder.sale') })}
+          </DialogTitle>
           <DialogDescription>
-             {order ? 'Update details for this' : 'Start a new'} {type === 'purchase' ? 'procurement order' : 'customer sale'}.
+             {order ? t('modals.createOrder.editDesc', { type: type === 'purchase' ? t('modals.createOrder.procurement') : t('modals.createOrder.customerSale') })
+                    : t('modals.createOrder.createDesc', { type: type === 'purchase' ? t('modals.createOrder.procurement') : t('modals.createOrder.customerSale') })}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -242,11 +264,11 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
               name="partnerId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{type === 'purchase' ? 'Provider' : 'Customer'}</FormLabel>
+                  <FormLabel>{type === 'purchase' ? t('modals.createOrder.providerLabel') : t('modals.createOrder.customerLabel')}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={`Select a ${type === 'purchase' ? 'provider' : 'customer'}`} />
+                        <SelectValue placeholder={t('modals.createOrder.selectPlaceholder', { type: type === 'purchase' ? t('modals.createOrder.providerLabel') : t('modals.createOrder.customerLabel') })} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -267,7 +289,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
 
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <FormLabel>Items</FormLabel>
+                <FormLabel>{t('modals.createOrder.itemsLabel')}</FormLabel>
                 <Button
                   type="button"
                   size="sm"
@@ -275,19 +297,27 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                   onClick={() => append({ productId: '', quantity: '1', unitPrice: '0' })}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Product
+                  {t('modals.createOrder.addProduct')}
                 </Button>
               </div>
               
               <div className="max-h-[240px] overflow-y-auto space-y-2 pr-2">
-              {fields.map((field, index) => (
+              {fields.map((field, index) => {
+                const currentProductId = watchedItems?.[index]?.productId;
+                const availableStock = type === 'sale' && currentProductId 
+                    ? stockBatches
+                        .filter(b => b.productId === currentProductId)
+                        .reduce((sum, b) => sum + b.quantity, 0)
+                    : null;
+
+                return (
                 <div key={field.id} className="flex gap-2 items-end border p-2 rounded-md bg-slate-50 dark:bg-slate-900">
                   <FormField
                     control={form.control}
                     name={`items.${index}.productId`}
                     render={({ field }) => (
                       <FormItem className="flex-1">
-                        <FormLabel className="text-xs">Product</FormLabel>
+                        <FormLabel className="text-xs">{t('modals.createOrder.productLabel')}</FormLabel>
                         <Select 
                             onValueChange={(val) => {
                                 field.onChange(val);
@@ -300,7 +330,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select product" />
+                              <SelectValue placeholder={t('modals.createOrder.selectProduct')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -317,10 +347,22 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                     control={form.control}
                     name={`items.${index}.quantity`}
                     render={({ field }) => (
-                      <FormItem className="w-20">
-                        <FormLabel className="text-xs">Qty</FormLabel>
+                      <FormItem className="w-24">
+                        <FormLabel className="text-xs">
+                            {t('modals.createOrder.qtyLabel')}
+                            {availableStock !== null && (
+                                <span className="block text-[10px] font-normal text-slate-500 whitespace-nowrap">
+                                    {t('modals.createOrder.maxStock', { stock: availableStock })}
+                                </span>
+                            )}
+                        </FormLabel>
                         <FormControl>
-                          <Input type="number" min="1" {...field} />
+                          <Input 
+                            type="number" 
+                            min="1" 
+                            max={availableStock !== null ? availableStock : undefined}
+                            {...field} 
+                          />
                         </FormControl>
                       </FormItem>
                     )}
@@ -331,7 +373,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                     name={`items.${index}.unitPrice`}
                     render={({ field }) => (
                       <FormItem className="w-24">
-                        <FormLabel className="text-xs">Price</FormLabel>
+                        <FormLabel className="text-xs">{t('modals.createOrder.priceLabel')}</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" min="0" {...field} />
                         </FormControl>
@@ -349,7 +391,8 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>
-              ))}
+              );
+              })}
               </div>
             </div>
 
@@ -358,7 +401,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
               name="totalAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Total Amount ($)</FormLabel>
+                  <FormLabel>{t('modals.createOrder.totalLabel')}</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} />
                   </FormControl>
@@ -372,7 +415,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
               name="amountPaid"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount Paid ($)</FormLabel>
+                  <FormLabel>{t('modals.createOrder.paidLabel')}</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} />
                   </FormControl>
@@ -386,7 +429,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
               name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Status</FormLabel>
+                  <FormLabel>{t('modals.createOrder.statusLabel')}</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     value={field.value}
@@ -394,14 +437,14 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
+                        <SelectValue placeholder={t('modals.createOrder.selectStatus')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="completed">{type === 'purchase' ? 'Received' : 'Completed'}</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="draft">{t('modals.createOrder.status.draft')}</SelectItem>
+                      <SelectItem value="pending">{t('modals.createOrder.status.pending')}</SelectItem>
+                      <SelectItem value="completed">{type === 'purchase' ? t('modals.createOrder.status.received') : t('modals.createOrder.status.completed')}</SelectItem>
+                      <SelectItem value="cancelled">{t('modals.createOrder.status.cancelled')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -414,9 +457,9 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes</FormLabel>
+                  <FormLabel>{t('modals.createOrder.notesLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Optional notes..." {...field} />
+                    <Input placeholder={t('modals.createOrder.notesPlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -426,7 +469,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
             <DialogFooter>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {order ? 'Save Changes' : 'Create Order'}
+                {order ? t('modals.createOrder.saveButton') : t('modals.createOrder.createButton')}
               </Button>
             </DialogFooter>
           </form>

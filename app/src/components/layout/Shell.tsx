@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Package, 
   BarChart3, 
@@ -22,6 +23,11 @@ interface LayoutProps {
 
 export function Layout({ children, currentView, onNavigate }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { t, i18n } = useTranslation();
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+  };
 
   return (
     <div className="flex h-screen bg-slate-50/50 text-slate-900 font-sans overflow-hidden">
@@ -33,7 +39,7 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight text-white">StockPILE</h1>
-            <p className="text-xs text-slate-400 font-medium">Enterprise Manager</p>
+            <p className="text-xs text-slate-400 font-medium">{t('shell.enterpriseManager')}</p>
           </div>
         </div>
         
@@ -53,7 +59,7 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
                     }`}
                   >
                     <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
-                    <span className="font-medium tracking-wide text-sm">{item.label}</span>
+                    <span className="font-medium tracking-wide text-sm">{t(item.label)}</span>
                     {isActive && (
                       <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-white shadow-lg shadow-white/50 animate-pulse" />
                     )}
@@ -73,12 +79,12 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
             </div>
             <div className="flex-1 overflow-hidden">
               <p className="text-sm font-semibold text-white truncate">Alice Manager</p>
-              <p className="text-xs text-slate-500 truncate">Administrator</p>
+              <p className="text-xs text-slate-500 truncate">{t('shell.administrator')}</p>
             </div>
           </div>
           <button className="flex items-center justify-center gap-2 w-full py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-slate-700">
             <LogOut className="w-3.5 h-3.5" />
-            Sign Out
+            {t('shell.signOut')}
           </button>
         </div>
       </aside>
@@ -98,19 +104,35 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
           </div>
 
           <div className="hidden md:flex items-center gap-2 text-sm text-slate-500">
-            <span className="hover:text-slate-800 cursor-pointer transition-colors">App</span>
+            <span className="hover:text-slate-800 cursor-pointer transition-colors">{t('shell.app')}</span>
             <ChevronRight className="w-4 h-4 text-slate-400" />
-            <span className="font-medium text-slate-800 capitalize">{currentView}</span>
+            <span className="font-medium text-slate-800 capitalize">{t(`nav.${currentView}`)}</span>
           </div>
 
           <div className="flex-1 px-8 py-5 flex justify-end items-center gap-6">
             <div className="hidden md:flex items-center gap-4">
               <ConnectionStatus />
+              
+              <div className="flex items-center gap-2 bg-slate-100/50 rounded-full p-1 border border-slate-200/60">
+                <button 
+                  onClick={() => changeLanguage('fr')}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${i18n.language === 'fr' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  FR
+                </button>
+                <button 
+                  onClick={() => changeLanguage('en')}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${i18n.language === 'en' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  EN
+                </button>
+              </div>
+
               <div className="relative hidden md:block w-64 group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
               <input 
                 type="text" 
-                placeholder="Type to search..." 
+                placeholder={t('shell.search')} 
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-100/50 border border-transparent hover:bg-slate-100 focus:bg-white focus:border-indigo-200 rounded-full text-sm outline-none ring-0 focus:ring-4 focus:ring-indigo-500/10 transition-all duration-300"
               />
             </div>
@@ -158,7 +180,7 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
                   }`}
                 >
                   <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium">{t(item.label)}</span>
                 </button>
               );
             })}

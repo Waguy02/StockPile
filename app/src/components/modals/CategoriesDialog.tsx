@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Plus } from 'lucide-react';
 import {
   Dialog,
@@ -21,6 +22,7 @@ interface CategoriesDialogProps {
 
 export function CategoriesDialog({ open, onOpenChange }: CategoriesDialogProps) {
   const { categories, refresh } = useStore();
+  const { t } = useTranslation();
   const [isCreating, setIsCreating] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryDesc, setNewCategoryDesc] = useState("");
@@ -52,19 +54,19 @@ export function CategoriesDialog({ open, onOpenChange }: CategoriesDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Manage Categories</DialogTitle>
+          <DialogTitle>{t('modals.categories.title')}</DialogTitle>
           <DialogDescription>
-            View and manage product categories here.
+            {t('modals.categories.desc')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-4">
             <div className="flex justify-between items-center mb-4">
-                 <h3 className="text-sm font-medium">Existing Categories</h3>
+                 <h3 className="text-sm font-medium">{t('modals.categories.existing')}</h3>
                  {!isCreating && (
                      <Button size="sm" variant="outline" onClick={() => setIsCreating(true)}>
                          <Plus className="w-4 h-4 mr-2" />
-                         Add New
+                         {t('modals.categories.addNew')}
                      </Button>
                  )}
             </div>
@@ -72,26 +74,26 @@ export function CategoriesDialog({ open, onOpenChange }: CategoriesDialogProps) 
             {isCreating && (
                 <form onSubmit={handleCreate} className="mb-4 p-4 border rounded-lg bg-slate-50 space-y-3">
                     <div className="space-y-1">
-                        <label className="text-xs font-medium">Name</label>
+                        <label className="text-xs font-medium">{t('modals.categories.nameLabel')}</label>
                         <Input 
                             value={newCategoryName} 
                             onChange={(e) => setNewCategoryName(e.target.value)}
-                            placeholder="e.g. Electronics"
+                            placeholder={t('modals.categories.namePlaceholder')}
                             autoFocus
                         />
                     </div>
                     <div className="space-y-1">
-                        <label className="text-xs font-medium">Description</label>
+                        <label className="text-xs font-medium">{t('modals.categories.descLabel')}</label>
                         <Input 
                             value={newCategoryDesc} 
                             onChange={(e) => setNewCategoryDesc(e.target.value)}
-                            placeholder="Optional description"
+                            placeholder={t('modals.categories.descPlaceholder')}
                         />
                     </div>
                     <div className="flex justify-end gap-2 mt-2">
-                        <Button type="button" variant="ghost" size="sm" onClick={() => setIsCreating(false)}>Cancel</Button>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => setIsCreating(false)}>{t('modals.categories.cancel')}</Button>
                         <Button type="submit" size="sm" disabled={isLoading}>
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('modals.categories.save')}
                         </Button>
                     </div>
                 </form>
@@ -100,7 +102,7 @@ export function CategoriesDialog({ open, onOpenChange }: CategoriesDialogProps) 
             <ScrollArea className="h-[300px] w-full rounded-md border p-4">
                 <div className="space-y-4">
                     {categories.length === 0 ? (
-                        <p className="text-sm text-center text-muted-foreground py-8">No categories found.</p>
+                        <p className="text-sm text-center text-muted-foreground py-8">{t('modals.categories.noCategories')}</p>
                     ) : (
                         categories.map((cat) => (
                             <div key={cat.id} className="flex items-center justify-between group p-2 hover:bg-slate-50 rounded-lg transition-colors">

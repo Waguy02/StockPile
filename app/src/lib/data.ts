@@ -94,11 +94,11 @@ export type Payment = {
 export type ViewState = 'dashboard' | 'inventory' | 'partners' | 'procurement' | 'sales' | 'finance' | 'admin';
 
 export const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-  { id: 'inventory', label: 'Inventory', icon: Package },
-  { id: 'partners', label: 'Partners', icon: Users },
-  { id: 'procurement', label: 'Procurement', icon: Truck },
-  { id: 'sales', label: 'Sales', icon: ShoppingCart },
-  { id: 'finance', label: 'Finance', icon: CreditCard },
-  { id: 'admin', label: 'Admin', icon: Settings },
+  { id: 'dashboard', label: 'nav.dashboard', icon: BarChart3 },
+  { id: 'inventory', label: 'nav.inventory', icon: Package },
+  { id: 'partners', label: 'nav.partners', icon: Users },
+  { id: 'procurement', label: 'nav.procurement', icon: Truck },
+  { id: 'sales', label: 'nav.sales', icon: ShoppingCart },
+  { id: 'finance', label: 'nav.finance', icon: CreditCard },
+  { id: 'admin', label: 'nav.admin', icon: Settings },
 ];

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Plus, 
   Search, 
@@ -15,6 +16,7 @@ import {
 import { useStore } from '../../lib/StoreContext';
 import { CreateOrderDialog } from '../modals/CreateOrderDialog';
 import { api } from '../../lib/api';
+import { formatCurrency } from '../../lib/formatters';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,11 +26,12 @@ import {
 
 export function Procurement() {
   const { purchaseOrders, providers, managers, isLoading, refresh } = useStore();
+  const { t } = useTranslation();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   
-  const getProviderName = (id: string) => providers.find(p => p.id === id)?.name || 'Unknown Provider';
-  const getManagerName = (id: string) => managers.find(m => m.id === id)?.name || 'Unknown Manager';
+  const getProviderName = (id: string) => providers.find(p => p.id === id)?.name || t('common.unknown');
+  const getManagerName = (id: string) => managers.find(m => m.id === id)?.name || t('common.unknown');
 
   const handleEditOrder = (order: any) => {
     setEditingOrder(order);
@@ -36,7 +39,7 @@ export function Procurement() {
   };
 
   const handleDeleteOrder = async (id: string) => {
-    if (confirm('Are you sure you want to delete this purchase order?')) {
+    if (confirm(t('common.confirmDelete', { item: 'purchase order' }))) {
         await api.deletePO(id);
         await refresh();
     }
@@ -61,15 +64,15 @@ export function Procurement() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Procurement</h1>
-          <p className="text-slate-500 mt-2 text-sm font-medium">Create and track purchase orders with your suppliers.</p>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{t('procurement.title')}</h1>
+          <p className="text-slate-500 mt-2 text-sm font-medium">{t('procurement.subtitle')}</p>
         </div>
         <button 
           onClick={() => setIsCreateOpen(true)}
           className="flex items-center px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium text-sm shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Create Order
+          {t('procurement.createOrder')}
         </button>
       </div>
 
@@ -86,13 +89,13 @@ export function Procurement() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
             <input 
               type="text"
-              placeholder="Search by Order ID, Provider..."
+              placeholder={t('procurement.searchPlaceholder')}
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none ring-0 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
             />
           </div>
           <button className="flex items-center px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 text-sm font-medium hover:bg-slate-50 hover:text-indigo-600 transition-colors shadow-sm">
             <Filter className="w-4 h-4 mr-2" />
-            Filter Status
+            {t('procurement.filterStatus')}
           </button>
         </div>
 
@@ -100,17 +103,25 @@ export function Procurement() {
           <table className="w-full text-left text-sm text-slate-600">
             <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200 uppercase tracking-wider text-xs">
               <tr>
-                <th className="px-6 py-4">Order ID</th>
-                <th className="px-6 py-4">Provider</th>
-                <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Total Amount</th>
-                <th className="px-6 py-4">Payment</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4">{t('procurement.table.orderId')}</th>
+                <th className="px-6 py-4">{t('procurement.table.provider')}</th>
+                <th className="px-6 py-4">{t('procurement.table.date')}</th>
+                <th className="px-6 py-4">{t('procurement.table.totalAmount')}</th>
+                <th className="px-6 py-4">{t('procurement.table.paymentProgress')}</th>
+                <th className="px-6 py-4">{t('procurement.table.status')}</th>
+                <th className="px-6 py-4 text-right">{t('procurement.table.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {purchaseOrders.map((po) => (
+              {purchaseOrders.map((po) => {
+                const amountPaid = po.amountPaid || 0;
+                const percentPaid = po.totalAmount > 0 ? Math.round((amountPaid / po.totalAmount) * 100) : 0;
+                // If total amount is 0 and we have paid 0, it's technically 100% paid if it's free? 
+                // Or maybe 0%? Sales uses : 100. Let's stick to sales logic if totalAmount is 0.
+                // Actually sales logic: sale.totalAmount > 0 ? ... : 100;
+                const percentDisplay = po.totalAmount > 0 ? Math.round((amountPaid / po.totalAmount) * 100) : (po.status === 'completed' ? 100 : 0);
+
+                return (
                 <tr key={po.id} className="hover:bg-slate-50/80 transition-colors group">
                   <td className="px-6 py-4">
                     <span className="font-mono text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded-md border border-slate-200 group-hover:border-indigo-200 group-hover:bg-indigo-50 group-hover:text-indigo-700 transition-colors">
@@ -119,7 +130,7 @@ export function Procurement() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-semibold text-slate-900">{getProviderName(po.providerId)}</div>
-                    <div className="text-xs text-slate-400 mt-1">Req. by {getManagerName(po.managerId)}</div>
+                    <div className="text-xs text-slate-400 mt-1">{t('procurement.reqBy', { name: getManagerName(po.managerId) })}</div>
                   </td>
                   <td className="px-6 py-4">
                      <div className="flex items-center text-slate-500">
@@ -127,19 +138,20 @@ export function Procurement() {
                         {po.initiationDate}
                     </div>
                   </td>
-                  <td className="px-6 py-4 font-mono font-medium text-slate-700">${po.totalAmount.toLocaleString()}</td>
+                  <td className="px-6 py-4 font-mono font-medium text-slate-700">{formatCurrency(po.totalAmount)}</td>
                   <td className="px-6 py-4">
-                     {po.paymentStatus ? (
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-100">
-                        <CheckCircle2 className="w-3 h-3 mr-1.5" />
-                        Paid
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold border border-amber-100">
-                        <Clock className="w-3 h-3 mr-1.5" />
-                        Pending
-                      </span>
-                    )}
+                      <div className="w-full max-w-[140px]">
+                         <div className="flex justify-between text-xs mb-1.5">
+                            <span className="font-medium text-slate-600">{percentDisplay}%</span>
+                            <span className="text-slate-400">{formatCurrency(po.amountPaid || 0)} {t('procurement.paid')}</span>
+                         </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-500 ${percentDisplay === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`} 
+                            style={{ width: `${Math.min(percentDisplay, 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
@@ -149,7 +161,7 @@ export function Procurement() {
                         ? 'bg-indigo-50 text-indigo-700 border-indigo-100'
                         : 'bg-slate-100 text-slate-600 border-slate-200'
                     }`}>
-                      {po.status === 'completed' ? 'Received' : po.status.charAt(0).toUpperCase() + po.status.slice(1)}
+                      {po.status === 'completed' ? t('procurement.status.received') : t(`procurement.status.${po.status}`)}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -165,17 +177,18 @@ export function Procurement() {
                           onClick={() => handleEditOrder(po)}
                         >
                             <Edit className="w-4 h-4 mr-2" />
-                            Edit
+                            {t('common.edit')}
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteOrder(po.id)}>
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
+                            {t('common.delete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

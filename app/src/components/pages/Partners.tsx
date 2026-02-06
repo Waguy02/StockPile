@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Building2, 
   User, 
@@ -23,6 +24,7 @@ import {
 
 export function Partners() {
   const { providers, customers, isLoading, refresh } = useStore();
+  const { t } = useTranslation();
   const [activeModal, setActiveModal] = useState<'provider' | 'customer' | null>(null);
   const [editingPartner, setEditingPartner] = useState<any>(null);
 
@@ -62,8 +64,8 @@ export function Partners() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Partners</h1>
-          <p className="text-slate-500 mt-2 text-sm font-medium">Manage your relationships with providers and customers.</p>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{t('partners.title')}</h1>
+          <p className="text-slate-500 mt-2 text-sm font-medium">{t('partners.subtitle')}</p>
         </div>
       </div>
       
@@ -83,18 +85,18 @@ export function Partners() {
               <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
                  <Building2 className="w-4 h-4" />
               </div>
-              <h2 className="font-bold text-slate-800">Providers</h2>
+              <h2 className="font-bold text-slate-800">{t('partners.providers')}</h2>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 shadow-sm">
-                {providers.length} Total
+                {providers.length} {t('partners.total')}
               </span>
               <button 
                 onClick={() => setActiveModal('provider')}
                 className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-xs shadow-sm transition-all"
               >
                 <Plus className="w-3 h-3 mr-1.5" />
-                Add Provider
+                {t('partners.addProvider')}
               </button>
             </div>
           </div>
@@ -104,7 +106,7 @@ export function Partners() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
               <input 
                 type="text" 
-                placeholder="Search providers..." 
+                placeholder={t('partners.searchProviders')}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-transparent hover:bg-slate-100 focus:bg-white focus:border-indigo-200 rounded-xl text-sm outline-none ring-0 focus:ring-4 focus:ring-indigo-500/10 transition-all"
               />
             </div>
@@ -114,8 +116,8 @@ export function Partners() {
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-sm">
                 <tr className="border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500 font-semibold">
-                  <th className="px-5 py-3">Name</th>
-                  <th className="px-5 py-3">Status</th>
+                  <th className="px-5 py-3">{t('partners.table.name')}</th>
+                  <th className="px-5 py-3">{t('partners.table.status')}</th>
                   <th className="px-5 py-3 text-right"></th>
                 </tr>
               </thead>
@@ -142,11 +144,11 @@ export function Partners() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem className="cursor-pointer" onClick={() => handleEdit('provider', provider)}>
                             <Edit className="w-4 h-4 mr-2" />
-                            Edit
+                            {t('common.edit')}
                           </DropdownMenuItem>
                           <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteProvider(provider.id)}>
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
+                            {t('common.delete')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -165,18 +167,18 @@ export function Partners() {
                <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
                  <User className="w-4 h-4" />
               </div>
-              <h2 className="font-bold text-slate-800">Customers</h2>
+              <h2 className="font-bold text-slate-800">{t('partners.customers')}</h2>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 shadow-sm">
-                {customers.length} Total
+                {customers.length} {t('partners.total')}
               </span>
               <button 
                 onClick={() => setActiveModal('customer')}
                 className="flex items-center px-3 py-1.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium text-xs shadow-sm transition-all"
               >
                 <Plus className="w-3 h-3 mr-1.5" />
-                Add Customer
+                {t('partners.addCustomer')}
               </button>
             </div>
           </div>
@@ -186,7 +188,7 @@ export function Partners() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-purple-500 transition-colors" />
               <input 
                 type="text" 
-                placeholder="Search customers..." 
+                placeholder={t('partners.searchCustomers')}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-transparent hover:bg-slate-100 focus:bg-white focus:border-purple-200 rounded-xl text-sm outline-none ring-0 focus:ring-4 focus:ring-purple-500/10 transition-all"
               />
             </div>
@@ -196,8 +198,8 @@ export function Partners() {
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-sm">
                  <tr className="border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500 font-semibold">
-                  <th className="px-5 py-3">Name / Contact</th>
-                  <th className="px-5 py-3">Status</th>
+                  <th className="px-5 py-3">{t('partners.table.nameContact')}</th>
+                  <th className="px-5 py-3">{t('partners.table.status')}</th>
                   <th className="px-5 py-3 text-right"></th>
                 </tr>
               </thead>
@@ -230,11 +232,11 @@ export function Partners() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem className="cursor-pointer" onClick={() => handleEdit('customer', customer)}>
                             <Edit className="w-4 h-4 mr-2" />
-                            Edit
+                            {t('common.edit')}
                           </DropdownMenuItem>
                           <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteCustomer(customer.id)}>
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
+                            {t('common.delete')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

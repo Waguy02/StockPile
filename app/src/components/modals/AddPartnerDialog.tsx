@@ -1,5 +1,6 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -38,6 +39,7 @@ interface AddPartnerDialogProps {
 
 export function AddPartnerDialog({ open, onOpenChange, type = 'provider', partner }: AddPartnerDialogProps) {
   const { refresh } = useStore();
+  const { t } = useTranslation();
   const form = useForm({
     defaultValues: {
       name: '',
@@ -95,9 +97,13 @@ export function AddPartnerDialog({ open, onOpenChange, type = 'provider', partne
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{partner ? 'Edit' : 'Add New'} {type === 'provider' ? 'Provider' : 'Customer'}</DialogTitle>
+          <DialogTitle>
+            {partner ? t('modals.addPartner.editTitle', { type: type === 'provider' ? t('modals.addPartner.provider') : t('modals.addPartner.customer') }) 
+                     : t('modals.addPartner.addTitle', { type: type === 'provider' ? t('modals.addPartner.provider') : t('modals.addPartner.customer') })}
+          </DialogTitle>
           <DialogDescription>
-             {partner ? 'Update details for this' : 'Register a new'}  {type === 'provider' ? 'supplier' : 'client'} in the system.
+             {partner ? t('modals.addPartner.editDesc', { type: type === 'provider' ? t('modals.addPartner.supplier') : t('modals.addPartner.client') })
+                      : t('modals.addPartner.addDesc', { type: type === 'provider' ? t('modals.addPartner.supplier') : t('modals.addPartner.client') })}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -107,9 +113,9 @@ export function AddPartnerDialog({ open, onOpenChange, type = 'provider', partne
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>{t('modals.addPartner.nameLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder={type === 'provider' ? "Company Name" : "Full Name"} {...field} />
+                    <Input placeholder={type === 'provider' ? t('modals.addPartner.namePlaceholderProvider') : t('modals.addPartner.namePlaceholderCustomer')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -121,7 +127,7 @@ export function AddPartnerDialog({ open, onOpenChange, type = 'provider', partne
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{t('modals.addPartner.emailLabel')}</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="contact@example.com" {...field} />
                   </FormControl>
@@ -135,7 +141,7 @@ export function AddPartnerDialog({ open, onOpenChange, type = 'provider', partne
               name="contactInfo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone / Address</FormLabel>
+                  <FormLabel>{t('modals.addPartner.contactLabel')}</FormLabel>
                   <FormControl>
                     <Input placeholder="+1 234..." {...field} />
                   </FormControl>
@@ -147,7 +153,7 @@ export function AddPartnerDialog({ open, onOpenChange, type = 'provider', partne
             <DialogFooter>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Register {type === 'provider' ? 'Provider' : 'Customer'}
+                {t('modals.addPartner.registerButton', { type: type === 'provider' ? t('modals.addPartner.provider') : t('modals.addPartner.customer') })}
               </Button>
             </DialogFooter>
           </form>

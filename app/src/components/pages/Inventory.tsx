@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Search, 
   Filter, 
@@ -15,6 +16,7 @@ import { useStore } from '../../lib/StoreContext';
 import { AddProductDialog } from '../modals/AddProductDialog';
 import { CategoriesDialog } from '../modals/CategoriesDialog';
 import { api } from '../../lib/api';
+import { formatCurrency } from '../../lib/formatters';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +26,7 @@ import {
 
 export function Inventory() {
   const { products, categories, stockBatches, isLoading, refresh } = useStore();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'products' | 'batches'>('products');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
@@ -41,14 +44,14 @@ export function Inventory() {
   }
   
   const handleDeleteProduct = async (id: string) => {
-    if (confirm('Are you sure you want to delete this product?')) {
+    if (confirm(t('common.confirmDelete', { item: 'product' }))) {
         await api.deleteProduct(id);
         await refresh();
     }
   };
 
   const handleDeleteBatch = async (id: string) => {
-    if (confirm('Are you sure you want to delete this batch?')) {
+    if (confirm(t('common.confirmDelete', { item: 'batch' }))) {
         await api.deleteBatch(id);
         await refresh();
     }
@@ -66,8 +69,8 @@ export function Inventory() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Inventory</h1>
-          <p className="text-slate-500 mt-2 text-sm font-medium">Manage your product catalog and track stock levels in real-time.</p>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{t('inventory.title')}</h1>
+          <p className="text-slate-500 mt-2 text-sm font-medium">{t('inventory.subtitle')}</p>
         </div>
         <div className="flex space-x-3">
           <button 
@@ -75,14 +78,14 @@ export function Inventory() {
             className="flex items-center px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 hover:border-slate-300 font-medium text-sm transition-all shadow-sm"
           >
             <Tag className="w-4 h-4 mr-2 text-slate-500" />
-            Categories
+            {t('inventory.categories')}
           </button>
           <button 
             onClick={() => setIsAddProductOpen(true)}
             className="flex items-center px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium text-sm shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add Product
+            {t('inventory.addProduct')}
           </button>
         </div>
       </div>
@@ -107,7 +110,7 @@ export function Inventory() {
                     : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                 }`}
             >
-                Product Catalog
+                {t('inventory.tab.productCatalog')}
                 {activeTab === 'products' && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full mx-6"></div>
                 )}
@@ -120,7 +123,7 @@ export function Inventory() {
                     : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
                 }`}
             >
-                Stock Batches
+                {t('inventory.tab.stockBatches')}
                 {activeTab === 'batches' && (
                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full mx-6"></div>
                 )}
@@ -134,7 +137,7 @@ export function Inventory() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
             <input 
               type="text"
-              placeholder={`Search ${activeTab === 'products' ? 'products by name or description' : 'batches by label'}...`}
+              placeholder={t('inventory.searchPlaceholder', { type: activeTab === 'products' ? t('inventory.tab.productCatalog') : t('inventory.tab.stockBatches') })}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm outline-none ring-0 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
@@ -142,7 +145,7 @@ export function Inventory() {
           </div>
           <button className="flex items-center px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 text-sm font-medium hover:bg-slate-50 hover:text-indigo-600 transition-colors shadow-sm">
             <ListFilter className="w-4 h-4 mr-2" />
-            Filter
+            {t('inventory.filter')}
           </button>
         </div>
 
@@ -164,10 +167,10 @@ export function Inventory() {
         
         {/* Pagination */}
         <div className="p-4 border-t border-slate-100 bg-white flex items-center justify-between text-sm text-slate-500">
-          <span className="font-medium">Showing 1-10 of {activeTab === 'products' ? products.length : stockBatches.length} items</span>
+          <span className="font-medium">{t('inventory.showing', { count: activeTab === 'products' ? products.length : stockBatches.length })}</span>
           <div className="flex space-x-2">
-            <button className="px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors" disabled>Previous</button>
-            <button className="px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-indigo-600 font-medium transition-colors">Next</button>
+            <button className="px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors" disabled>{t('inventory.previous')}</button>
+            <button className="px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-indigo-600 font-medium transition-colors">{t('inventory.next')}</button>
           </div>
         </div>
       </div>
@@ -177,19 +180,20 @@ export function Inventory() {
 
 function ProductsTable({ searchTerm, onEdit, onDelete }: { searchTerm: string, onEdit: (p: any) => void, onDelete: (id: string) => void }) {
   const { products, categories, stockBatches } = useStore();
+  const { t } = useTranslation();
   
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getCategoryName = (id: string) => categories.find(c => c.id === id)?.name || 'Unknown';
+  const getCategoryName = (id: string) => categories.find(c => c.id === id)?.name || t('common.unknown');
 
   if (filteredProducts.length === 0) {
       return (
           <div className="flex flex-col items-center justify-center h-64 text-slate-400">
               <PackageOpen className="w-12 h-12 mb-3 opacity-20" />
-              <p>No products found matching your search.</p>
+              <p>{t('inventory.noProducts')}</p>
           </div>
       )
   }
@@ -198,12 +202,12 @@ function ProductsTable({ searchTerm, onEdit, onDelete }: { searchTerm: string, o
     <table className="w-full text-left text-sm text-slate-600">
       <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200 uppercase tracking-wider text-xs">
         <tr>
-          <th className="px-6 py-4">Product Name</th>
-          <th className="px-6 py-4">Category</th>
-          <th className="px-6 py-4">Base Price</th>
-          <th className="px-6 py-4">Total Stock</th>
-          <th className="px-6 py-4">Status</th>
-          <th className="px-6 py-4 text-right">Actions</th>
+          <th className="px-6 py-4">{t('inventory.table.productName')}</th>
+          <th className="px-6 py-4">{t('inventory.table.category')}</th>
+          <th className="px-6 py-4">{t('inventory.table.basePrice')}</th>
+          <th className="px-6 py-4">{t('inventory.table.totalStock')}</th>
+          <th className="px-6 py-4">{t('inventory.table.status')}</th>
+          <th className="px-6 py-4 text-right">{t('inventory.table.actions')}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-slate-100">
@@ -223,11 +227,11 @@ function ProductsTable({ searchTerm, onEdit, onDelete }: { searchTerm: string, o
                   {getCategoryName(product.categoryId)}
                 </span>
               </td>
-              <td className="px-6 py-4 font-mono font-medium text-slate-700">${product.baseUnitPrice.toFixed(2)}</td>
+              <td className="px-6 py-4 font-mono font-medium text-slate-700">{formatCurrency(product.baseUnitPrice)}</td>
               <td className="px-6 py-4">
                 <div className="flex items-center">
                   <div className={`w-2 h-2 rounded-full mr-2 ${totalStock < 10 ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
-                  <span className={`font-semibold ${totalStock < 10 ? 'text-rose-600' : 'text-slate-700'}`}>{totalStock} units</span>
+                  <span className={`font-semibold ${totalStock < 10 ? 'text-rose-600' : 'text-slate-700'}`}>{totalStock} {t('inventory.units')}</span>
                 </div>
               </td>
               <td className="px-6 py-4">
@@ -249,11 +253,11 @@ function ProductsTable({ searchTerm, onEdit, onDelete }: { searchTerm: string, o
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem className="cursor-pointer" onClick={() => onEdit(product)}>
                             <Edit className="w-4 h-4 mr-2" />
-                            Edit
+                            {t('common.edit')}
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => onDelete(product.id)}>
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
+                            {t('common.delete')}
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -268,18 +272,19 @@ function ProductsTable({ searchTerm, onEdit, onDelete }: { searchTerm: string, o
 
 function BatchesTable({ searchTerm, onDelete }: { searchTerm: string, onDelete: (id: string) => void }) {
   const { stockBatches, products } = useStore();
+  const { t } = useTranslation();
   
   const filteredBatches = stockBatches.filter(b => 
     b.batchLabel.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getProductName = (id: string) => products.find(p => p.id === id)?.name || 'Unknown';
+  const getProductName = (id: string) => products.find(p => p.id === id)?.name || t('common.unknown');
 
    if (filteredBatches.length === 0) {
       return (
           <div className="flex flex-col items-center justify-center h-64 text-slate-400">
               <PackageOpen className="w-12 h-12 mb-3 opacity-20" />
-              <p>No batches found.</p>
+              <p>{t('inventory.noBatches')}</p>
           </div>
       )
   }
@@ -288,12 +293,12 @@ function BatchesTable({ searchTerm, onDelete }: { searchTerm: string, onDelete: 
     <table className="w-full text-left text-sm text-slate-600">
       <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200 uppercase tracking-wider text-xs">
         <tr>
-          <th className="px-6 py-4">Batch Label</th>
-          <th className="px-6 py-4">Product</th>
-          <th className="px-6 py-4">Entry Date</th>
-          <th className="px-6 py-4">Unit Cost</th>
-          <th className="px-6 py-4">Quantity</th>
-          <th className="px-6 py-4 text-right">Actions</th>
+          <th className="px-6 py-4">{t('inventory.table.batchLabel')}</th>
+          <th className="px-6 py-4">{t('inventory.table.product')}</th>
+          <th className="px-6 py-4">{t('inventory.table.entryDate')}</th>
+          <th className="px-6 py-4">{t('inventory.table.unitCost')}</th>
+          <th className="px-6 py-4">{t('inventory.table.quantity')}</th>
+          <th className="px-6 py-4 text-right">{t('inventory.table.actions')}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-slate-100">
@@ -308,7 +313,7 @@ function BatchesTable({ searchTerm, onDelete }: { searchTerm: string, onDelete: 
               {getProductName(batch.productId)}
             </td>
             <td className="px-6 py-4 text-slate-500">{batch.entryDate}</td>
-            <td className="px-6 py-4 font-mono font-medium">${batch.unitPriceCost.toFixed(2)}</td>
+            <td className="px-6 py-4 font-mono font-medium">{formatCurrency(batch.unitPriceCost)}</td>
             <td className="px-6 py-4">
                <div className="flex items-center">
                   <div className={`w-1.5 h-1.5 rounded-full mr-2 ${batch.quantity < 10 ? 'bg-rose-500' : 'bg-slate-300'}`}></div>
@@ -327,7 +332,7 @@ function BatchesTable({ searchTerm, onDelete }: { searchTerm: string, onDelete: 
                     <DropdownMenuContent align="end">
                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => onDelete(batch.id)}>
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
+                            {t('common.delete')}
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
