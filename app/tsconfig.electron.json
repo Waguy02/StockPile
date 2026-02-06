@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "target": "ESNext",
+    "outDir": "dist-electron",
+    "strict": true,
+    "lib": ["ESNext"],
+    "sourceMap": false,
+    "noEmit": false,
+    "allowImportingTsExtensions": false
+  },
+  "include": ["electron/**/*"]
+}
