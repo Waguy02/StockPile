@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useIsFetching, useMutationState } from '@tanstack/react-query';
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { cn } from '../../components/ui/utils';
 
 export function ConnectionStatus() {
+  const { t } = useTranslation();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const isFetching = useIsFetching();
   const mutations = useMutationState({
@@ -38,17 +40,17 @@ export function ConnectionStatus() {
       {!isOnline ? (
         <>
           <WifiOff className="w-3.5 h-3.5" />
-          <span>Offline</span>
+          <span>{t('connection.offline')}</span>
         </>
       ) : isSyncing ? (
         <>
           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-          <span>Syncing...</span>
+          <span>{t('connection.syncing')}</span>
         </>
       ) : (
         <>
           <Wifi className="w-3.5 h-3.5" />
-          <span>Connected</span>
+          <span>{t('connection.connected')}</span>
         </>
       )}
     </div>
