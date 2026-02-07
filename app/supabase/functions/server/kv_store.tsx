@@ -85,3 +85,12 @@ export const getByPrefix = async (prefix: string): Promise<any[]> => {
   }
   return data?.map((d) => d.value) ?? [];
 };
+
+// Delete multiple key-value pairs by prefix
+export const deleteByPrefix = async (prefix: string): Promise<void> => {
+  const supabase = client()
+  const { error } = await supabase.from("kv_store_7e8df46b").delete().like("key", prefix + "%");
+  if (error) {
+    throw new Error(error.message);
+  }
+};

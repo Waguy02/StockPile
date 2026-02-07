@@ -92,10 +92,10 @@ export type Payment = {
 export type Manager = {
   id: string;
   name: string;
-  role: 'admin' | 'manager' | 'staff';
+  email: string;
+  role: 'manager' | 'staff';
   lastActive?: string;
   status: 'active' | 'inactive';
-  password?: string; // Optional for frontend security, but present in data
 };
 
 // --- Navigation ---

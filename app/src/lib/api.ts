@@ -1,20 +1,35 @@
 import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { supabase } from './supabase';
 
-const BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-7e8df46b`;
+const BASE_URL = `https://${projectId}.supabase.co/functions/v1/server`;
 
 // Helper to handle IDs that may contain special characters like '#' which usually get stripped 
 // by proxies/gateways if only single-encoded.
 const encodeId = (id: string) => encodeURIComponent(encodeURIComponent(id));
 
-async function fetchWithAuth(path: string, options: RequestInit = {}) {
+type FetchOptions = RequestInit & { allowAnon?: boolean; forceAnon?: boolean };
+
+async function fetchWithAuth(path: string, options: FetchOptions = {}) {
+  const { allowAnon, forceAnon, ...fetchOptions } = options;
+  const { data: { session } } = await supabase.auth.getSession();
+  let token = forceAnon ? publicAnonKey : session?.access_token;
+
+  if (!token) {
+    if (allowAnon) {
+      token = publicAnonKey;
+    } else {
+      throw new Error('Authentication required. Please sign in again.');
+    }
+  }
+
   const headers = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${publicAnonKey}`,
-    ...options.headers,
+    'Authorization': `Bearer ${token}`,
+    ...fetchOptions.headers,
   };
 
   const response = await fetch(`${BASE_URL}${path}`, {
-    ...options,
+    ...fetchOptions,
     headers,
   });
 
@@ -41,7 +56,7 @@ async function fetchWithAuth(path: string, options: RequestInit = {}) {
 }
 
 export const api = {
-  seed: () => fetchWithAuth('/seed', { method: 'POST' }),
+  seed: (force = false) => fetchWithAuth(`/seed${force ? '?force=true' : ''}`, { method: 'POST', allowAnon: true }),
   
   getInventory: () => fetchWithAuth('/inventory'),
   getPartners: () => fetchWithAuth('/partners'),
@@ -73,7 +88,12 @@ export const api = {
   createPayment: (data: any) => fetchWithAuth('/finance', { method: 'POST', body: JSON.stringify(data) }),
   updatePayment: (id: string, data: any) => fetchWithAuth(`/finance/${encodeId(id)}`, { method: 'PUT', body: JSON.stringify(data) }),
   deletePayment: (id: string) => fetchWithAuth(`/finance/${encodeId(id)}`, { method: 'DELETE' }),
+
   createUser: (data: any) => fetchWithAuth('/admin/user', { method: 'POST', body: JSON.stringify(data) }),
   updateUser: (id: string, data: any) => fetchWithAuth(`/admin/user/${encodeId(id)}`, { method: 'PUT', body: JSON.stringify(data) }),
-  deleteUser: (id: string) => fetchWithAuth(`/admin/user/${encodeId(id)}`, { method: 'DELETE' }),
+  deleteUser: (id: string, email?: string) =>
+    fetchWithAuth(
+      `/admin/user/${encodeId(id)}${email ? `?email=${encodeId(email)}` : ''}`,
+      { method: 'DELETE' }
+    ),
 };

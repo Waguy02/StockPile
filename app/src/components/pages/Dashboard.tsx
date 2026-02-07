@@ -240,7 +240,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
 
   return (
     <div className="space-y-8 pb-10">
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{t('dashboard.title')}</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm font-medium">{t('dashboard.subtitle')}</p>
@@ -306,7 +306,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
           trend={isStaff ? '' : t('dashboard.arriving', { count: pendingOrders })}
           trendUp={true}
           variant="purple"
-          onClick={() => !isStaff && onNavigate('procurement')}
+          onClick={!isStaff ? () => onNavigate('procurement') : undefined}
         />
       </div>
 
@@ -394,7 +394,11 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
           </div>
           <div className="space-y-6 flex-1 overflow-auto pr-2 custom-scrollbar">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-start gap-4 group cursor-pointer">
+              <div 
+                key={i} 
+                onClick={() => onNavigate(i % 2 === 0 ? 'sales' : 'inventory')}
+                className="flex items-start gap-4 group cursor-pointer"
+              >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                     i % 2 === 0 
                         ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30' 
@@ -433,18 +437,21 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         
         {/* Pane 1: Stock by Category (Pie Chart) */}
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] flex flex-col">
+        <div 
+            onClick={() => onNavigate('inventory')}
+            className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] flex flex-col cursor-pointer hover:shadow-lg transition-all duration-300 group"
+        >
             <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-violet-50 dark:bg-violet-900/20 rounded-lg">
+                <div className="p-2 bg-violet-50 dark:bg-violet-900/20 rounded-lg group-hover:bg-violet-100 dark:group-hover:bg-violet-900/30 transition-colors">
                     <PieChartIcon className="w-5 h-5 text-violet-600 dark:text-violet-400" />
                 </div>
                 <div>
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('dashboard.stockByCategory')}</h2>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t('dashboard.stockByCategory')}</h2>
                     <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">{t('dashboard.distribution')}</p>
                 </div>
             </div>
             
-            <div className="h-64 w-full flex-1 flex items-center justify-center">
+            <div className="h-72 min-h-[18rem] w-full flex items-center justify-center">
                {stockByCategoryData.length > 0 ? (
                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -485,18 +492,21 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
         </div>
 
         {/* Pane 2: Top Selling Products (Bar Chart) */}
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] lg:col-span-2 flex flex-col">
+        <div 
+            onClick={() => onNavigate('sales')}
+            className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] lg:col-span-2 flex flex-col cursor-pointer hover:shadow-lg transition-all duration-300 group"
+        >
             <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-pink-50 dark:bg-pink-900/20 rounded-lg">
+                <div className="p-2 bg-pink-50 dark:bg-pink-900/20 rounded-lg group-hover:bg-pink-100 dark:group-hover:bg-pink-900/30 transition-colors">
                     <BarChart3 className="w-5 h-5 text-pink-600 dark:text-pink-400" />
                 </div>
                 <div>
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('dashboard.topSellingProducts')}</h2>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t('dashboard.topSellingProducts')}</h2>
                     <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">{t('dashboard.bestSellers')}</p>
                 </div>
             </div>
             
-            <div className="h-64 w-full flex-1">
+            <div className="h-72 min-h-[18rem] w-full">
                 {topSellingData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart
@@ -546,18 +556,21 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
            {/* Pane 3: Order Status Overview (Donut Chart) */}
-           <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] flex flex-col">
+           <div 
+                onClick={!isStaff ? () => onNavigate('procurement') : undefined}
+                className={`bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] flex flex-col hover:shadow-lg transition-all duration-300 group ${!isStaff ? 'cursor-pointer' : ''}`}
+           >
             <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30 transition-colors">
                     <PieChartIcon className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('dashboard.orderStatus')}</h2>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t('dashboard.orderStatus')}</h2>
                     <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">{t('dashboard.statusDistribution')}</p>
                 </div>
             </div>
             
-            <div className="h-64 w-full flex-1">
+            <div className="h-72 min-h-[18rem] w-full">
                {orderStatusData.length > 0 ? (
                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -599,18 +612,21 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
         </div>
 
          {/* Pane 4: Monthly Trend (Line/Area Chart) */}
-         <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] flex flex-col">
+         <div 
+            onClick={() => onNavigate('sales')}
+            className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] flex flex-col cursor-pointer hover:shadow-lg transition-all duration-300 group"
+         >
             <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-teal-50 dark:bg-teal-900/20 rounded-lg">
+                <div className="p-2 bg-teal-50 dark:bg-teal-900/20 rounded-lg group-hover:bg-teal-100 dark:group-hover:bg-teal-900/30 transition-colors">
                     <TrendingUp className="w-5 h-5 text-teal-600 dark:text-teal-400" />
                 </div>
                 <div>
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('dashboard.monthlySales')}</h2>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{t('dashboard.monthlySales')}</h2>
                     <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">{t('dashboard.salesTrend')}</p>
                 </div>
             </div>
             
-            <div className="h-64 w-full flex-1">
+            <div className="h-72 min-h-[18rem] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={monthlySalesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <defs>

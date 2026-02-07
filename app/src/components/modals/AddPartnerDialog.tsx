@@ -95,7 +95,7 @@ export function AddPartnerDialog({ open, onOpenChange, type = 'provider', partne
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+      <DialogContent className="w-[95vw] sm:max-w-[425px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-slate-900 dark:text-slate-100">
             {partner ? t('modals.addPartner.editTitle', { type: type === 'provider' ? t('modals.addPartner.provider') : t('modals.addPartner.customer') }) 

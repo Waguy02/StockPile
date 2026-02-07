@@ -1,4 +1,5 @@
 import * as kv from "./kv_store.tsx";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 export const categories = [
   { id: 'c1', name: 'Electronics', description: 'Gadgets and devices', status: 'active' },
@@ -49,24 +50,78 @@ export const payments = [
   { id: 'pay3', referenceId: 's2', referenceType: 'sale', date: '2024-02-12', amount: 3000, managerId: 'm1', status: 'completed' },
 ];
 
-export const managers = [
-  { id: 'm1', name: 'Alice Manager', role: 'admin', password: '12345678', status: 'active', lastActive: new Date().toISOString() },
-  { id: 'm2', name: 'Bob Supervisor', role: 'manager', password: '12345678', status: 'active', lastActive: new Date().toISOString() },
-  { id: 'm3', name: 'John Employee', role: 'staff', password: '12345678', status: 'active', lastActive: new Date().toISOString() },
+const DEFAULT_PASSWORD = '12345678';
+
+export const seedUsers = [
+  { seedId: 'm1', name: 'Manager', email: 'manager@example.com', role: 'manager' as const },
+  { seedId: 'm2', name: 'Staff', email: 'staff@example.com', role: 'staff' as const },
 ];
 
 export async function seedDatabase() {
+  // Clear existing data. User list is only in Supabase Auth — clear any legacy manager:* keys from kv_store.
+  const prefixes = ['category:', 'product:', 'batch:', 'provider:', 'customer:', 'po:', 'sale:', 'payment:', 'manager:'];
+  for (const prefix of prefixes) {
+    await kv.deleteByPrefix(prefix);
+  }
+
+  // Seed Auth Users
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseServiceKey = Deno.env.get("SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const managerIdMap = new Map<string, string>();
+
+  if (supabaseUrl && supabaseServiceKey) {
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      console.log("Seeding Auth Users...");
+      
+      const { data: { users } } = await supabase.auth.admin.listUsers();
+      const usersByEmail = new Map(
+        (users || []).filter(u => u.email).map(u => [u.email as string, u])
+      );
+
+      for (const user of seedUsers) {
+          const existing = usersByEmail.get(user.email);
+          if (existing?.id) {
+              managerIdMap.set(user.seedId, existing.id);
+              const { error: updateError } = await supabase.auth.admin.updateUserById(existing.id, {
+                  user_metadata: { name: user.name, role: user.role }
+              });
+              if (updateError) {
+                  console.error(`Failed to update user ${user.email}:`, updateError.message);
+              } else {
+                  console.log(`Updated user ${user.email}`);
+              }
+              continue;
+          }
+
+          const { data: { user: createdUser }, error } = await supabase.auth.admin.createUser({
+              email: user.email,
+              password: DEFAULT_PASSWORD,
+              email_confirm: true,
+              user_metadata: { name: user.name, role: user.role }
+          });
+          if (error) {
+              console.error(`Failed to create user ${user.email}:`, error.message);
+              continue;
+          }
+          if (createdUser?.id) {
+              managerIdMap.set(user.seedId, createdUser.id);
+              console.log(`Created user ${user.email}`);
+          }
+      }
+  }
+
   const data: Record<string, any> = {};
+  const resolveManagerId = (seedId: string) => managerIdMap.get(seedId) || seedId;
 
   categories.forEach(c => data[`category:${c.id}`] = c);
   products.forEach(p => data[`product:${p.id}`] = p);
   stockBatches.forEach(b => data[`batch:${b.id}`] = b);
   providers.forEach(p => data[`provider:${p.id}`] = p);
   customers.forEach(c => data[`customer:${c.id}`] = c);
-  purchaseOrders.forEach(po => data[`po:${po.id}`] = po);
-  sales.forEach(s => data[`sale:${s.id}`] = s);
-  payments.forEach(p => data[`payment:${p.id}`] = p);
-  managers.forEach(m => data[`manager:${m.id}`] = m);
+  purchaseOrders.forEach(po => data[`po:${po.id}`] = { ...po, managerId: resolveManagerId(po.managerId) });
+  sales.forEach(s => data[`sale:${s.id}`] = { ...s, managerId: resolveManagerId(s.managerId) });
+  payments.forEach(p => data[`payment:${p.id}`] = { ...p, managerId: resolveManagerId(p.managerId) });
+  // User list is only in Supabase Auth — nothing is written to kv_store for users.
 
   // Set a flag to indicate seeding is done
   data['system:seeded'] = true;

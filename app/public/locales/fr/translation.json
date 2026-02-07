@@ -1,0 +1,331 @@
+{
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "inventory": "Inventaire",
+    "partners": "Partenaires",
+    "procurement": "Approvisionnement",
+    "sales": "Ventes",
+    "finance": "Finance",
+    "admin": "Administration"
+  },
+  "shell": {
+      "signOut": "Se déconnecter",
+      "enterpriseManager": "Gestion de Stock",
+      "administrator": "Administrateur",
+      "search": "Rechercher...",
+      "app": "App"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "subtitle": "Aperçu de votre inventaire et des indicateurs de performance.",
+    "totalInventory": "Inventaire Total",
+    "itemsInStock": "Articles en stock",
+    "totalRevenue": "Revenu Total",
+    "currentFiscalYear": "Année fiscale en cours",
+    "lowStock": "Stock Faible",
+    "batchesBelowThreshold": "Lots sous le seuil",
+    "pendingOrders": "Commandes en attente",
+    "awaitingDelivery": "En attente de livraison",
+    "revenueAnalytics": "Analyse des revenus",
+    "comparisonSalesProcurement": "Comparaison entre les ventes et les coûts d'approvisionnement",
+    "stockByCategory": "Stock par Catégorie",
+    "topSellingProducts": "Produits les plus vendus",
+    "orderStatus": "Aperçu des statuts de commande",
+    "monthlySales": "Croissance mensuelle des ventes",
+    "distribution": "Répartition des articles en stock",
+    "bestSellers": "Articles les plus populaires par quantité vendue",
+    "statusDistribution": "Répartition des bons de commande",
+    "salesTrend": "Performance des ventes au fil du temps",
+    "recentActivity": "Activité Récente",
+    "viewAllActivity": "Voir toute l'activité",
+    "filter": {
+        "allTime": "Depuis le début",
+        "last7Days": "7 derniers jours",
+        "last30Days": "30 derniers jours",
+        "lastTrimester": "Dernier trimestre",
+        "lastYear": "L'année dernière"
+    },
+    "downloadReport": "Télécharger Rapport",
+    "actionNeeded": "Action requise",
+    "arriving": "{{count}} en arrivée",
+    "activity": {
+        "newSale": "Nouvelle Vente Enregistrée",
+        "stockBatch": "Lot de Stock Reçu",
+        "saleDesc": "Commande #{{id}} traitée pour {{customer}}.",
+        "batchDesc": "Lot #{{id}} ajouté à l'inventaire ({{count}} unités)."
+    }
+  },
+  "admin": {
+    "title": "Administration",
+    "subtitle": "Configuration système et contrôle d'accès utilisateur.",
+    "resetDatabase": "Réinitialiser la base de données",
+    "confirmReset": "Êtes-vous sûr de vouloir réinitialiser la base de données avec les données par défaut ? Cette action est irréversible.",
+    "addUser": "Ajouter Utilisateur",
+    "editUser": "Modifier Utilisateur",
+    "addUserDesc": "Créer un nouveau profil utilisateur avec des droits d'accès spécifiques.",
+    "editUserDesc": "Mettre à jour les détails de l'utilisateur et son rôle.",
+    "activeUsers": "Utilisateurs & Managers Actifs",
+    "changePassword": "Changer Mot de Passe",
+    "changePasswordDesc": "Définir un nouveau mot de passe pour {{name}}.",
+    "newPassword": "Nouveau Mot de Passe",
+    "table": {
+      "name": "Nom",
+      "role": "Rôle",
+      "lastActive": "Dernière Activité"
+    },
+    "onlineNow": "En ligne",
+    "hoursAgo": "il y a {{hours}} heures",
+    "yesterday": "Hier",
+    "userUpdated": "Utilisateur mis à jour avec succès",
+    "userCreated": "Utilisateur créé avec succès",
+    "actions": {
+      "resetPassword": "Réinitialiser Mot de Passe",
+      "activateAccount": "Activer le compte",
+      "deactivateAccount": "Désactiver le compte"
+    },
+    "accountDisabled": "Votre compte est désactivé. Veuillez contacter l'administrateur.",
+    "email": "Email",
+    "emailPlaceholder": "exemple@email.com"
+  },
+  "partners": {
+    "title": "Partenaires",
+    "subtitle": "Gérez vos relations avec les fournisseurs et clients.",
+    "providers": "Fournisseurs",
+    "customers": "Clients",
+    "total": "Total",
+    "addProvider": "Ajouter Fournisseur",
+    "addCustomer": "Ajouter Client",
+    "searchProviders": "Rechercher fournisseurs...",
+    "searchCustomers": "Rechercher clients...",
+    "table": {
+      "name": "Nom",
+      "status": "Statut",
+      "nameContact": "Nom / Contact"
+    }
+  },
+  "finance": {
+    "title": "Finance",
+    "subtitle": "Suivez vos flux de revenus et dépenses.",
+    "exportReport": "Exporter Rapport",
+    "totalRevenue": "Revenu Total",
+    "totalExpenses": "Dépenses Totales",
+    "netFlow": "Flux Net",
+    "transactionHistory": "Historique des Transactions",
+    "table": {
+      "date": "Date",
+      "type": "Type",
+      "reference": "Référence",
+      "processedBy": "Traité Par",
+      "amount": "Montant"
+    },
+    "incoming": "Entrant",
+    "outgoing": "Sortant",
+    "saleRef": "Vente #{{id}}",
+    "poRef": "BC #{{id}}"
+  },
+  "procurement": {
+    "title": "Approvisionnement",
+    "subtitle": "Créez et suivez les bons de commande avec vos fournisseurs.",
+    "createOrder": "Créer Commande",
+    "searchPlaceholder": "Rech. par ID Commande, Fournisseur...",
+    "filterStatus": "Filtrer Statut",
+    "table": {
+      "orderId": "ID Commande",
+      "provider": "Fournisseur",
+      "date": "Date",
+      "totalAmount": "Montant Total",
+      "paymentProgress": "Progression Paiement",
+      "status": "Statut",
+      "actions": "Actions"
+    },
+    "reqBy": "Dmd. par {{name}}",
+    "paid": "payé",
+    "status": {
+      "received": "Reçu",
+      "pending": "En attente",
+      "draft": "Brouillon",
+      "completed": "Terminé",
+      "cancelled": "Annulé"
+    }
+  },
+  "sales": {
+    "title": "Commandes de Vente",
+    "subtitle": "Gérez et suivez les commandes clients du brouillon à la finalisation.",
+    "newSale": "Nouvelle Vente",
+    "searchPlaceholder": "Rechercher ventes...",
+    "filter": "Filtrer",
+    "table": {
+      "saleId": "ID Vente",
+      "customer": "Client",
+      "products": "Produits",
+      "date": "Date",
+      "total": "Total",
+      "paymentProgress": "Progression Paiement",
+      "responsible": "Responsable",
+      "status": "Statut",
+      "actions": "Actions"
+    },
+    "filters": {
+      "startDate": "Date début",
+      "endDate": "Date fin",
+      "paymentStatus": "Statut Paiement",
+      "clear": "Effacer filtres",
+      "apply": "Appliquer"
+    },
+    "paid": "payé"
+  },
+  "inventory": {
+    "title": "Inventaire",
+    "subtitle": "Gérez votre catalogue produit et suivez les niveaux de stock en temps réel.",
+    "categories": "Catégories",
+    "addProduct": "Ajouter Produit",
+    "tab": {
+      "productCatalog": "Catalogue Produit",
+      "stockBatches": "Lots de Stock"
+    },
+    "searchProducts": "produits par nom ou description",
+    "searchBatches": "lots par étiquette",
+    "searchPlaceholder": "Rechercher {{type}}...",
+    "filter": "Filtrer",
+    "showing": "Affichage 1-10 de {{count}} éléments",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "noProducts": "Aucun produit trouvé correspondant à votre recherche.",
+    "noBatches": "Aucun lot trouvé.",
+    "table": {
+      "productName": "Nom Produit",
+      "category": "Catégorie",
+      "basePrice": "Prix Base",
+      "totalStock": "Stock Total",
+      "status": "Statut",
+      "actions": "Actions",
+      "batchLabel": "Étiquette Lot",
+      "product": "Produit",
+      "entryDate": "Date Entrée",
+      "unitCost": "Coût Unitaire",
+      "quantity": "Quantité"
+    },
+    "units": "unités",
+    "includeOutOfStock": "Inclure les produits épuisés"
+  },
+  "modals": {
+    "addPartner": {
+      "editTitle": "Modifier {{type}}",
+      "addTitle": "Ajouter Nouveau {{type}}",
+      "editDesc": "Mettre à jour les détails pour ce {{type}} dans le système.",
+      "addDesc": "Enregistrer un nouveau {{type}} dans le système.",
+      "provider": "Fournisseur",
+      "customer": "Client",
+      "supplier": "fournisseur",
+      "client": "client",
+      "nameLabel": "Nom",
+      "namePlaceholderProvider": "Nom de l'Entreprise",
+      "namePlaceholderCustomer": "Nom Complet",
+      "emailLabel": "Email",
+      "contactLabel": "Téléphone / Adresse",
+      "registerButton": "Enregistrer {{type}}"
+    },
+    "addProduct": {
+      "editTitle": "Modifier Produit",
+      "addTitle": "Ajouter Nouveau Produit",
+      "editDesc": "Mettre à jour les détails de ce produit dans votre catalogue.",
+      "addDesc": "Créer une nouvelle fiche produit dans votre catalogue.",
+      "nameLabel": "Nom du Produit",
+      "namePlaceholder": "ex: Laptop Pro X",
+      "categoryLabel": "Catégorie",
+      "categoryPlaceholder": "Sélectionner une catégorie",
+      "priceLabel": "Prix de Base Standard (FCFA)",
+      "priceDesc": "Le prix de vente par défaut.",
+      "descLabel": "Description",
+      "descPlaceholder": "Description courte...",
+      "statusLabel": "Statut",
+      "statusPlaceholder": "Sélectionner statut",
+      "status": {
+        "active": "Actif",
+        "inactive": "Inactif",
+        "archived": "Archivé"
+      },
+      "createButton": "Créer Produit",
+      "validateButton": "Valider",
+      "saveButton": "Enregistrer"
+    },
+    "categories": {
+      "title": "Gérer les Catégories",
+      "desc": "Voir et gérer les catégories de produits ici.",
+      "existing": "Catégories Existantes",
+      "addNew": "Ajouter",
+      "nameLabel": "Nom",
+      "namePlaceholder": "ex: Électronique",
+      "descLabel": "Description",
+      "descPlaceholder": "Description optionnelle",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "noCategories": "Aucune catégorie trouvée."
+    },
+    "createOrder": {
+      "editTitle": "Modifier Commande {{type}}",
+      "createTitle": "Créer Commande {{type}}",
+      "editDesc": "Mettre à jour les détails de cette commande {{type}}.",
+      "createDesc": "Commencer une nouvelle commande {{type}}.",
+      "purchase": "Achat",
+      "sale": "Vente",
+      "procurement": "d'approvisionnement",
+      "customerSale": "client",
+      "providerLabel": "Fournisseur",
+      "customerLabel": "Client",
+      "selectPlaceholder": "Sélectionner un {{type}}",
+      "selectProviderPlaceholder": "Sélectionner un fournisseur",
+      "selectCustomerPlaceholder": "Sélectionner un client",
+      "itemsLabel": "Articles",
+      "addProduct": "Ajouter Produit",
+      "productLabel": "Produit",
+      "selectProduct": "Sélectionner produit",
+      "qtyLabel": "Qté",
+      "maxStock": "Max: {{stock}}",
+      "priceLabel": "Prix",
+      "totalLabel": "Montant Total (FCFA)",
+      "paidLabel": "Montant Payé (FCFA)",
+      "statusLabel": "Statut",
+      "selectStatus": "Sélectionner statut",
+      "notesLabel": "Notes",
+      "notesPlaceholder": "Notes optionnelles...",
+      "saveButton": "Enregistrer",
+      "createButton": "Créer Commande",
+      "status": {
+        "draft": "Brouillon",
+        "pending": "En attente",
+        "received": "Reçu",
+        "completed": "Terminé",
+        "cancelled": "Annulé"
+      },
+      "errors": {
+        "completedStatus": "Impossible de modifier le statut d'une commande terminée",
+        "selectPartner": "Veuillez sélectionner un {{type}}",
+        "insufficientStock": "Impossible de vendre plus que le stock disponible pour le produit sélectionné",
+        "stockCreation": "Échec de la création de stock pour un article",
+        "saveFailed": "Échec de l'enregistrement de la commande : {{error}}"
+      },
+      "success": {
+        "batchesCreated": "{{count}} lots de stock créés",
+        "purchaseUpdated": "Bon de commande mis à jour",
+        "purchaseCreated": "Bon de commande créé",
+        "saleUpdated": "Commande de vente mise à jour",
+        "saleCreated": "Commande de vente créée"
+      }
+    }
+  },
+  "connection": {
+    "connected": "Connecté",
+    "offline": "Hors ligne",
+    "syncing": "Synchronisation..."
+  },
+  "common": {
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "deleteCompleted": "Impossible de supprimer une commande terminée",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet(te) {{item}} ?",
+    "unknown": "Inconnu",
+    "allOptions": "Tous",
+    "error": "Une erreur est survenue"
+  }
+}

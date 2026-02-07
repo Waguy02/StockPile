@@ -80,13 +80,15 @@ export function AddProductDialog({ open, onOpenChange, product }: AddProductDial
             ...product,
             ...data,
             categoryId: data.categoryId,
-            baseUnitPrice: Number(data.baseUnitPrice)
+            baseUnitPrice: Number(data.baseUnitPrice),
+            status: product.status || 'active',
            });
         } else {
            await api.createProduct({
             ...data,
             categoryId: data.categoryId,
-            baseUnitPrice: Number(data.baseUnitPrice)
+            baseUnitPrice: Number(data.baseUnitPrice),
+            status: 'active',
            });
         }
         
@@ -102,7 +104,7 @@ export function AddProductDialog({ open, onOpenChange, product }: AddProductDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+      <DialogContent className="w-[95vw] sm:max-w-[425px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-slate-900 dark:text-slate-100">{product ? t('modals.addProduct.editTitle') : t('modals.addProduct.addTitle')}</DialogTitle>
           <DialogDescription className="text-slate-500 dark:text-slate-400">
@@ -181,33 +183,10 @@ export function AddProductDialog({ open, onOpenChange, product }: AddProductDial
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.addProduct.statusLabel')}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
-                        <SelectValue placeholder={t('modals.addProduct.statusPlaceholder')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
-                      <SelectItem value="active" className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800">{t('modals.addProduct.status.active')}</SelectItem>
-                      <SelectItem value="inactive" className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800">{t('modals.addProduct.status.inactive')}</SelectItem>
-                      <SelectItem value="archived" className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800">{t('modals.addProduct.status.archived')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <DialogFooter>
               <Button type="submit" disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-600 dark:hover:bg-indigo-700">
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t('modals.addProduct.createButton')}
+                {product ? t('modals.addProduct.validateButton') : t('modals.addProduct.createButton')}
               </Button>
             </DialogFooter>
           </form>

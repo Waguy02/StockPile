@@ -50,8 +50,8 @@ export const payments = [
 ];
 
 export const managers = [
-  { id: 'm1', name: 'Alice Manager' },
-  { id: 'm2', name: 'Bob Supervisor' },
+  { id: 'm1', name: 'Alice', role: 'manager' },
+  { id: 'm2', name: 'Bob', role: 'staff' },
 ];
 
 export async function seedDatabase() {

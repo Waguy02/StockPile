@@ -7,7 +7,6 @@ import { Procurement } from './components/pages/Procurement';
 import { Sales } from './components/pages/Sales';
 import { Finance } from './components/pages/Finance';
 import { Admin } from './components/pages/Admin';
-import { Login } from './components/pages/Login';
 import { ViewState } from './lib/data';
 import { StoreProvider, useStore } from './lib/StoreContext';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -17,9 +16,27 @@ import { queryClient, persister } from './lib/queryClient';
 import { Toaster } from './components/ui/sonner';
 import { ThemeProvider } from './components/theme-provider';
 
+import { Login } from './components/pages/Login';
+import { Loader2 } from 'lucide-react';
+
 function AppContent() {
   const [currentView, setCurrentView] = useState<ViewState>('dashboard');
-  const { currentUser } = useStore();
+  const { currentUser, isLoading } = useStore();
+
+  // Redirect staff to sales if they are on a restricted page
+  React.useEffect(() => {
+    if (currentUser?.role === 'staff' && !['sales', 'inventory'].includes(currentView)) {
+      setCurrentView('sales');
+    }
+  }, [currentUser, currentView]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
 
   if (!currentUser) {
     return <Login />;
@@ -42,7 +59,7 @@ function AppContent() {
       case 'admin':
         return <Admin />;
       default:
-        return <Dashboard onNavigate={setCurrentView} />;
+        return <Dashboard />;
     }
   };
 
@@ -60,7 +77,7 @@ function App() {
       client={queryClient} 
       persistOptions={{ persister }}
     >
-      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
         <StoreProvider>
           <AppContent />
         </StoreProvider>

@@ -215,6 +215,32 @@ export function Finance() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Transactions List */}
+        <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+          {filteredPayments.map(p => (
+              <div key={p.id} className="p-4 flex justify-between items-center">
+                  <div>
+                       <div className="flex items-center gap-2 mb-1">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
+                              p.referenceType === 'sale' 
+                              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30'
+                              : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-900/30'
+                          }`}>
+                           {p.referenceType === 'sale' ? 'IN' : 'OUT'}
+                        </span>
+                        <span className="font-mono text-xs text-slate-500">
+                            {p.referenceType === 'sale' ? `SALE-${p.referenceId.slice(0,4)}` : `PO-${p.referenceId.slice(0,4)}`}
+                        </span>
+                     </div>
+                     <p className="text-xs text-slate-400">{p.date}</p>
+                </div>
+                <div className={`font-mono font-medium ${p.referenceType === 'sale' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                     {p.referenceType === 'sale' ? '+' : '-'}{formatCurrency(p.amount)}
+                </div>
+              </div>
+          ))}
+        </div>
       </div>
     </div>
   );
