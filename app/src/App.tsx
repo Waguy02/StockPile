@@ -62,7 +62,7 @@ function AppContent() {
       case 'admin':
         return <Admin />;
       default:
-        return <Dashboard />;
+        return <Dashboard onNavigate={setCurrentView} />;
     }
   };
 

@@ -62,6 +62,7 @@ export type PurchaseOrder = {
   initiationDate: string;
   finalizationDate?: string;
   totalAmount: number;
+  amountPaid: number;
   paymentStatus: boolean;
   notes?: string;
   items?: OrderItem[];

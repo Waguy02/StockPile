@@ -145,5 +145,6 @@ Then rebuild and redeploy.
 | Frontend   | Vercel / Netlify / Cloudflare Pages  |
 | Env vars   | `VITE_SUPABASE_PROJECT_ID`, `VITE_SUPABASE_ANON_KEY` |
 | Build      | From `app/`: `npm run build` → `dist`|
+| APK mobile | Voir [MOBILE_BUILD.md](MOBILE_BUILD.md) pour tester sur Android. |
 
 All of the above can be done on **free tiers** for a first version.

@@ -11,9 +11,13 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "electron:dev": "concurrently \"vite\" \"wait-on tcp:5173 && npm run build:electron && electron .\"",
-    "electron:build": "npm run build && npm run build:electron && electron-builder"
+    "electron:build": "npm run build && npm run build:electron && electron-builder",
+    "sync:android": "npx cap sync android",
+    "build:android": "npm run build && npx cap sync android",
+    "build:apk": "npm run build:android && npx cap build android"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.5",
     "@capacitor/core": "^7.0.0",
     "@capacitor/status-bar": "^7.0.0",
     "@hookform/resolvers": "^3.9.0",
