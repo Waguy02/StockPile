@@ -80,7 +80,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         throw err;
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 mins
+    staleTime: 1000 * 30, // 30s — so refetch on window focus gets fresh stock after sales
+    refetchOnWindowFocus: true,
+    refetchInterval: 1000 * 45, // 45s — so all users see stock updates without refocusing
     enabled: !!session,
   });
 

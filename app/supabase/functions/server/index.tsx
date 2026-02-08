@@ -49,6 +49,18 @@ const generateShortId = () => {
   return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
 };
 
+/** Normalize date to full ISO string (precision to the second) for correct sorting. */
+const toISOSecond = (value: string | undefined): string => {
+  if (!value || typeof value !== "string") return new Date().toISOString();
+  const s = value.trim();
+  if (s.length === 10 && /^\d{4}-\d{2}-\d{2}$/.test(s)) return s + "T00:00:00.000Z";
+  if (s.length >= 19) {
+    const base = s.slice(0, 19);
+    return s.includes("Z") ? s.slice(0, 24) : base + ".000Z";
+  }
+  return new Date(s).toISOString();
+};
+
 /** Create a transaction line (payment) when amount paid is set or increased. */
 const createPaymentLine = async (
   referenceId: string,
@@ -58,7 +70,7 @@ const createPaymentLine = async (
 ) => {
   if (amount <= 0) return;
   const id = crypto.randomUUID();
-  const date = new Date().toISOString().split("T")[0];
+  const date = new Date().toISOString();
   const payment = {
     id,
     referenceId,
@@ -133,6 +145,22 @@ const getManagerFromRequest = async (c: any) => {
   return user;
 };
 
+// Get current authenticated user from JWT (manager or staff). Used to set managerId on sales when client omits it.
+const getCurrentUserFromRequest = async (c: any) => {
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const jwt = authHeader.slice(7).trim();
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!supabaseUrl || !anonKey) return null;
+  const supabase = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: { user }, error } = await supabase.auth.getUser(jwt);
+  if (error || !user) return null;
+  return user;
+};
+
 // Inventory Routes
 mainApp.get(`/inventory`, async (c) => {
   const [categories, products, batches] = await Promise.all([
@@ -160,6 +188,8 @@ mainApp.put(`/inventory/product/:id`, async (c) => {
 });
 
 mainApp.delete(`/inventory/product/:id`, async (c) => {
+  const manager = await getManagerFromRequest(c);
+  if (!manager) return c.json({ error: "Forbidden: manager role required" }, 403);
   const id = c.req.param("id");
   await kv.del(`product:${id}`);
   return c.json({ success: true });
@@ -169,6 +199,7 @@ mainApp.post(`/inventory/batch`, async (c) => {
   const body = await c.req.json();
   const id = body.id || crypto.randomUUID();
   const batch = { ...body, id };
+  if (batch.entryDate) batch.entryDate = toISOSecond(batch.entryDate);
   await kv.set(`batch:${id}`, batch);
   return c.json(batch);
 });
@@ -177,11 +208,14 @@ mainApp.put(`/inventory/batch/:id`, async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json();
   const batch = { ...body, id };
+  if (batch.entryDate) batch.entryDate = toISOSecond(batch.entryDate);
   await kv.set(`batch:${id}`, batch);
   return c.json(batch);
 });
 
 mainApp.delete(`/inventory/batch/:id`, async (c) => {
+  const manager = await getManagerFromRequest(c);
+  if (!manager) return c.json({ error: "Forbidden: manager role required" }, 403);
   const id = c.req.param("id");
   await kv.del(`batch:${id}`);
   return c.json({ success: true });
@@ -221,6 +255,8 @@ mainApp.put(`/partners/provider/:id`, async (c) => {
 });
 
 mainApp.delete(`/partners/provider/:id`, async (c) => {
+  const manager = await getManagerFromRequest(c);
+  if (!manager) return c.json({ error: "Forbidden: manager role required" }, 403);
   const id = c.req.param("id");
   await kv.del(`provider:${id}`);
   return c.json({ success: true });
@@ -243,14 +279,21 @@ mainApp.put(`/partners/customer/:id`, async (c) => {
 });
 
 mainApp.delete(`/partners/customer/:id`, async (c) => {
+  const manager = await getManagerFromRequest(c);
+  if (!manager) return c.json({ error: "Forbidden: manager role required" }, 403);
   const id = c.req.param("id");
   await kv.del(`customer:${id}`);
   return c.json({ success: true });
 });
 
-// Sales Routes
+// Sales Routes — staff only receive sales where they are the responsible
 mainApp.get(`/sales`, async (c) => {
   const sales = await getByPrefix('sale:');
+  const user = await getCurrentUserFromRequest(c);
+  if (user?.user_metadata?.role === 'staff') {
+    const filtered = sales.filter((s: any) => s.managerId === user.id);
+    return c.json(filtered);
+  }
   return c.json(sales);
 });
 
@@ -258,6 +301,11 @@ mainApp.post(`/sales`, async (c) => {
   const body = await c.req.json();
   const id = body.id || generateShortId();
   const sale = { ...body, id };
+  sale.initiationDate = toISOSecond(sale.initiationDate);
+  if (!sale.managerId) {
+    const user = await getCurrentUserFromRequest(c);
+    if (user) sale.managerId = user.id;
+  }
   if (sale.status === "completed") {
     const items = sale.items || [];
     try {
@@ -279,6 +327,13 @@ mainApp.put(`/sales/:id`, async (c) => {
   const body = await c.req.json();
   const existing = await kv.get(`sale:${id}`);
   const sale = { ...(existing || {}), ...body, id };
+  // Le responsable d'une vente ne change jamais : conserver celui qui a créé la vente
+  if (existing?.managerId) {
+    sale.managerId = existing.managerId;
+  } else if (!sale.managerId) {
+    const user = await getCurrentUserFromRequest(c);
+    sale.managerId = user?.id || "";
+  }
   if (sale.status === "completed" && existing?.status !== "completed") {
     const items = sale.items || [];
     try {
@@ -292,12 +347,15 @@ mainApp.put(`/sales/:id`, async (c) => {
   if (newPaid > oldPaid) {
     await createPaymentLine(sale.id, "sale", newPaid - oldPaid, sale.managerId || "");
   }
-  sale.updatedAt = new Date().toISOString().split("T")[0];
+  sale.updatedAt = new Date().toISOString();
+  if (sale.initiationDate && sale.initiationDate.length === 10) sale.initiationDate = toISOSecond(sale.initiationDate);
   await kv.set(`sale:${id}`, sale);
   return c.json(sale);
 });
 
 mainApp.delete(`/sales/:id`, async (c) => {
+  const manager = await getManagerFromRequest(c);
+  if (!manager) return c.json({ error: "Forbidden: manager role required" }, 403);
   const id = c.req.param("id");
   await kv.del(`sale:${id}`);
   return c.json({ success: true });
@@ -314,6 +372,8 @@ mainApp.post(`/procurement`, async (c) => {
   const existing = body.id ? await kv.get(`po:${body.id}`) : null;
   const id = existing ? body.id : (body.id || generateShortId());
   const po = { ...body, id };
+  if (po.initiationDate) po.initiationDate = toISOSecond(po.initiationDate);
+  if (po.finalizationDate) po.finalizationDate = toISOSecond(po.finalizationDate);
   const oldPaid = Number(existing?.amountPaid) || 0;
   const newPaid = Number(po.amountPaid) || 0;
   const delta = newPaid - oldPaid;
@@ -329,6 +389,8 @@ mainApp.put(`/procurement/:id`, async (c) => {
   const body = await c.req.json();
   const existing = await kv.get(`po:${id}`);
   const po = { ...(existing || {}), ...body, id };
+  if (po.initiationDate) po.initiationDate = toISOSecond(po.initiationDate);
+  if (po.finalizationDate) po.finalizationDate = toISOSecond(po.finalizationDate);
   const oldPaid = Number(existing?.amountPaid) || 0;
   const newPaid = Number(po.amountPaid) || 0;
   if (newPaid > oldPaid) {
@@ -339,6 +401,8 @@ mainApp.put(`/procurement/:id`, async (c) => {
 });
 
 mainApp.delete(`/procurement/:id`, async (c) => {
+  const manager = await getManagerFromRequest(c);
+  if (!manager) return c.json({ error: "Forbidden: manager role required" }, 403);
   const id = c.req.param("id");
   await kv.del(`po:${id}`);
   return c.json({ success: true });
@@ -354,6 +418,7 @@ mainApp.post(`/finance`, async (c) => {
   const body = await c.req.json();
   const id = body.id || crypto.randomUUID();
   const payment = { ...body, id };
+  if (payment.date) payment.date = toISOSecond(payment.date);
   await kv.set(`payment:${id}`, payment);
   return c.json(payment);
 });
@@ -362,11 +427,14 @@ mainApp.put(`/finance/:id`, async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json();
   const payment = { ...body, id };
+  if (payment.date) payment.date = toISOSecond(payment.date);
   await kv.set(`payment:${id}`, payment);
   return c.json(payment);
 });
 
 mainApp.delete(`/finance/:id`, async (c) => {
+  const manager = await getManagerFromRequest(c);
+  if (!manager) return c.json({ error: "Forbidden: manager role required" }, 403);
   const id = c.req.param("id");
   await kv.del(`payment:${id}`);
   return c.json({ success: true });
@@ -568,8 +636,17 @@ mainApp.get(`/dashboard`, async (c) => {
     getByPrefix('po:'),
     getByPrefix('payment:')
   ]);
-  
-  return c.json({ products, batches, sales, pos, payments, managers }); // Include managers in dashboard data if needed by frontend
+
+  // Staff only receive sales (and payments) where they are the responsible
+  const user = await getCurrentUserFromRequest(c);
+  let finalSales = sales;
+  let finalPayments = payments;
+  if (user?.user_metadata?.role === 'staff') {
+    finalSales = sales.filter((s: any) => s.managerId === user.id);
+    finalPayments = payments.filter((p: any) => p.managerId === user.id);
+  }
+
+  return c.json({ products, batches, sales: finalSales, pos, payments: finalPayments, managers });
 });
 
 // Create a parent app to handle routing.

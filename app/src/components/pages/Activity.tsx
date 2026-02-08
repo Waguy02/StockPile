@@ -7,13 +7,12 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Loader2,
-  Filter,
   ChevronLeft,
   ChevronRight,
   Search,
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
-import { formatCurrency } from '../../lib/formatters';
+import { formatCurrency, formatDateForDisplay } from '../../lib/formatters';
 import { ViewState } from '../../lib/data';
 import { Badge } from '../ui/badge';
 import {
@@ -40,17 +39,6 @@ type ActivityItem = {
 
 const PAGE_SIZE = 20;
 
-const ACTIVITY_TYPE_OPTIONS: { value: string; labelKey: string }[] = [
-  { value: 'all', labelKey: 'activity.filterTypeAll' },
-  { value: 'sale', labelKey: 'dashboard.activity.newSale' },
-  { value: 'saleUpdated', labelKey: 'dashboard.activity.saleUpdated' },
-  { value: 'purchaseOrder', labelKey: 'dashboard.activity.purchaseOrder' },
-  { value: 'stockReceived', labelKey: 'dashboard.activity.stockReceived' },
-  { value: 'batch', labelKey: 'dashboard.activity.stockBatch' },
-  { value: 'paymentIn', labelKey: 'dashboard.activity.paymentIn' },
-  { value: 'paymentOut', labelKey: 'dashboard.activity.paymentOut' },
-];
-
 function formatProductsList(
   items: { productId: string; quantity: number }[] | undefined,
   getProductName: (id: string) => string
@@ -62,9 +50,7 @@ function formatProductsList(
 export function Activity() {
   const { sales, purchaseOrders, stockBatches, payments, customers, providers, managers, currentUser, products, isLoading } = useStore();
   const { t } = useTranslation();
-  const [typeFilter, setTypeFilter] = useState('all');
   const [dateRange, setDateRange] = useState('all');
-  const [responsibleFilter, setResponsibleFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
 
@@ -107,20 +93,9 @@ export function Activity() {
       const saleIdShort = s.id.slice(0, 8).toUpperCase();
       const managerId = (s as any).managerId;
       const saleItems = s.items || [];
-      items.push({
-        key: `sale-${s.id}`,
-        date: s.initiationDate || '',
-        type: 'sale',
-        title: t('dashboard.activity.newSale'),
-        desc: t('dashboard.activity.saleDesc', { id: saleIdShort, customer: cust(s.customerId) }),
-        nav: 'sales',
-        icon: 'sale',
-        managerId,
-        productsDetail: formatProductsList(saleItems, getProductName),
-        productsItems: saleItems.length ? saleItems.map((i: any) => ({ productId: i.productId, quantity: i.quantity })) : undefined,
-      });
       const updatedAt = (s as any).updatedAt;
-      if (updatedAt && updatedAt !== s.initiationDate) {
+      const isUpdated = updatedAt && updatedAt !== s.initiationDate;
+      if (isUpdated) {
         items.push({
           key: `sale-updated-${s.id}`,
           date: updatedAt,
@@ -129,6 +104,19 @@ export function Activity() {
           desc: t('dashboard.activity.saleUpdatedDesc', { id: saleIdShort }),
           nav: 'sales',
           icon: 'saleUpdated',
+          managerId,
+          productsDetail: formatProductsList(saleItems, getProductName),
+          productsItems: saleItems.length ? saleItems.map((i: any) => ({ productId: i.productId, quantity: i.quantity })) : undefined,
+        });
+      } else {
+        items.push({
+          key: `sale-${s.id}`,
+          date: s.initiationDate || '',
+          type: 'sale',
+          title: t('dashboard.activity.newSale'),
+          desc: t('dashboard.activity.saleDesc', { id: saleIdShort, customer: cust(s.customerId) }),
+          nav: 'sales',
+          icon: 'sale',
           managerId,
           productsDetail: formatProductsList(saleItems, getProductName),
           productsItems: saleItems.length ? saleItems.map((i: any) => ({ productId: i.productId, quantity: i.quantity })) : undefined,
@@ -199,24 +187,15 @@ export function Activity() {
 
   const filteredItems = useMemo(() => {
     let list = allActivityItems;
-    if (typeFilter !== 'all') {
-      list = list.filter(item => item.type === typeFilter);
-    }
     if (dateRange !== 'all') {
       const now = new Date();
       const past = new Date();
-      if (dateRange === 'last7Days') past.setDate(now.getDate() - 7);
+      if (dateRange === 'last24Hours') past.setTime(now.getTime() - 24 * 60 * 60 * 1000);
+      else if (dateRange === 'last7Days') past.setDate(now.getDate() - 7);
       else if (dateRange === 'last30Days') past.setDate(now.getDate() - 30);
       else if (dateRange === 'lastTrimester') past.setMonth(now.getMonth() - 3);
       else if (dateRange === 'lastYear') past.setFullYear(now.getFullYear() - 1);
       list = list.filter(item => new Date(item.date) >= past);
-    }
-    if (responsibleFilter !== 'all') {
-      if (responsibleFilter === '__none__') {
-        list = list.filter(item => !item.managerId);
-      } else {
-        list = list.filter(item => item.managerId === responsibleFilter);
-      }
     }
     const q = searchQuery.trim().toLowerCase();
     if (q) {
@@ -225,7 +204,7 @@ export function Activity() {
       );
     }
     return list;
-  }, [allActivityItems, typeFilter, dateRange, responsibleFilter, searchQuery]);
+  }, [allActivityItems, dateRange, searchQuery]);
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -234,7 +213,7 @@ export function Activity() {
     [filteredItems, safePage]
   );
 
-  React.useEffect(() => setPage(1), [typeFilter, dateRange, responsibleFilter, searchQuery]);
+  React.useEffect(() => setPage(1), [dateRange, searchQuery]);
   React.useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [totalPages, page]);
@@ -284,38 +263,17 @@ export function Activity() {
         <div className="p-5 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col gap-4 border-b border-slate-100 dark:border-slate-800">
           <div className="flex flex-wrap gap-3 items-center justify-between">
             <div className="flex flex-wrap gap-3 items-center">
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger aria-label={t('activity.filterType')} className="h-10 min-w-[10rem] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                  <SelectValue placeholder={t('activity.filterType')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {ACTIVITY_TYPE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>{t(opt.labelKey)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <Select value={dateRange} onValueChange={setDateRange}>
                 <SelectTrigger aria-label={t('activity.filterDate')} className="h-10 min-w-[10rem] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                   <SelectValue placeholder={t('activity.filterDate')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('dashboard.filter.allTime')}</SelectItem>
+                  <SelectItem value="last24Hours">{t('dashboard.filter.last24Hours')}</SelectItem>
                   <SelectItem value="last7Days">{t('dashboard.filter.last7Days')}</SelectItem>
                   <SelectItem value="last30Days">{t('dashboard.filter.last30Days')}</SelectItem>
                   <SelectItem value="lastTrimester">{t('dashboard.filter.lastTrimester')}</SelectItem>
                   <SelectItem value="lastYear">{t('dashboard.filter.lastYear')}</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
-                <SelectTrigger aria-label={t('activity.filterResponsible')} className="h-10 min-w-[140px] rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                  <SelectValue placeholder={t('activity.filterResponsible')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('activity.filterResponsibleAll')}</SelectItem>
-                  <SelectItem value="__none__">{t('activity.filterResponsibleUnknown')}</SelectItem>
-                  {managers.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>{m.name || t('common.unknown')}</SelectItem>
-                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -361,7 +319,7 @@ export function Activity() {
                     const Icon = getIcon(item);
                     return (
                       <tr key={item.key} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
-                        <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{item.date}</td>
+                        <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDateForDisplay(item.date)}</td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${getIconClass(item)}`}>
@@ -400,7 +358,7 @@ export function Activity() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">{item.title}</p>
-                        <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">{item.date}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-0.5">{formatDateForDisplay(item.date)}</p>
                       </div>
                     </div>
                     <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{item.desc}</p>

@@ -17,13 +17,23 @@ import { useStore } from '../../lib/StoreContext';
 import { AddProductDialog } from '../modals/AddProductDialog';
 import { CategoriesDialog } from '../modals/CategoriesDialog';
 import { api } from '../../lib/api';
-import { formatCurrency } from '../../lib/formatters';
+import { formatCurrency, formatDateForDisplay } from '../../lib/formatters';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog';
 import {
   Popover,
   PopoverContent,
@@ -64,6 +74,7 @@ export function Inventory() {
     endDate: ''
   });
   const [includeOutOfStock, setIncludeOutOfStock] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<{ id: string; name: string } | null>(null);
 
   const clearFilters = () => {
     setFilters({
@@ -84,19 +95,18 @@ export function Inventory() {
       if (!open) setEditingProduct(null);
   }
   
-  const handleDeleteProduct = async (id: string) => {
-    if (confirm(t('common.confirmDelete', { item: 'product' }))) {
-        await api.deleteProduct(id);
-        await refresh();
-    }
+  const handleRequestDeleteProduct = (product: { id: string; name: string }) => {
+    setProductToDelete(product);
   };
 
-  const handleDeleteBatch = async (id: string) => {
-    if (confirm(t('common.confirmDelete', { item: 'batch' }))) {
-        await api.deleteBatch(id);
-        await refresh();
-    }
+  const handleConfirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+    await api.deleteProduct(productToDelete.id);
+    await refresh();
+    setProductToDelete(null);
   };
+
+  const isManager = currentUser?.role === 'manager';
 
   if (isLoading) {
     return (
@@ -202,7 +212,7 @@ export function Inventory() {
               <Switch
                 checked={includeOutOfStock}
                 onCheckedChange={(v) => setIncludeOutOfStock(!!v)}
-                className="shrink-0 data-[state=checked]:bg-indigo-600 dark:data-[state=checked]:bg-indigo-500"
+                className="shrink-0 data-[state=unchecked]:bg-slate-200 data-[state=checked]:bg-indigo-600 dark:data-[state=unchecked]:bg-slate-600 dark:data-[state=checked]:bg-indigo-500"
               />
             </div>
           )}
@@ -281,13 +291,12 @@ export function Inventory() {
                 filters={filters}
                 includeOutOfStock={includeOutOfStock}
                 onEdit={handleEditProduct} 
-                onDelete={handleDeleteProduct} 
+                onDelete={isManager ? handleRequestDeleteProduct : undefined}
             />
           ) : (
             <BatchesTable 
                 searchTerm={searchTerm} 
                 filters={filters}
-                onDelete={handleDeleteBatch}
             />
           )}
         </div>
@@ -301,14 +310,35 @@ export function Inventory() {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('inventory.deleteProductTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {productToDelete ? t('inventory.deleteProductDescription', { name: productToDelete.name }) : ''}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeleteProduct}
+              className="bg-rose-600 hover:bg-rose-700 focus:ring-rose-600"
+            >
+              {t('inventory.deleteProductConfirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
-function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelete }: { searchTerm: string, filters: any, includeOutOfStock: boolean, onEdit: (p: any) => void, onDelete: (id: string) => void }) {
+function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelete }: { searchTerm: string, filters: any, includeOutOfStock: boolean, onEdit: (p: any) => void, onDelete?: (product: { id: string; name: string }) => void }) {
   const { products, categories, stockBatches, currentUser } = useStore();
   const { t } = useTranslation();
   const showActions = currentUser?.role !== 'staff';
+  const canDelete = !!onDelete;
 
   const getTotalStock = (productId: string) =>
     stockBatches.filter(b => b.productId === productId).reduce((sum, b) => sum + b.quantity, 0);
@@ -381,10 +411,12 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
                                 <Edit className="w-4 h-4 mr-2" />
                                 {t('common.edit')}
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => onDelete(product.id)}>
+                            {canDelete && (
+                            <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => onDelete!({ id: product.id, name: product.name })}>
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 {t('common.delete')}
                             </DropdownMenuItem>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
                   </td>
@@ -422,10 +454,12 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
                               <Edit className="w-4 h-4 mr-2" />
                               {t('common.edit')}
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => onDelete(product.id)}>
+                          {canDelete && (
+                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => onDelete!({ id: product.id, name: product.name })}>
                               <Trash2 className="w-4 h-4 mr-2" />
                               {t('common.delete')}
                           </DropdownMenuItem>
+                          )}
                       </DropdownMenuContent>
                   </DropdownMenu>
                 )}
@@ -456,16 +490,17 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
   );
 }
 
-function BatchesTable({ searchTerm, filters, onDelete }: { searchTerm: string, filters: any, onDelete: (id: string) => void }) {
+function BatchesTable({ searchTerm, filters }: { searchTerm: string, filters: any }) {
   const { stockBatches, products } = useStore();
   const { t } = useTranslation();
   
   const filteredBatches = stockBatches.filter(b => {
     const matchesSearch = b.batchLabel.toLowerCase().includes(searchTerm.toLowerCase());
     
+    const batchDate = new Date(b.entryDate);
     const matchesDate = 
-        (!filters.startDate || b.entryDate >= filters.startDate) &&
-        (!filters.endDate || b.entryDate <= filters.endDate);
+        (!filters.startDate || batchDate >= new Date(filters.startDate + 'T00:00:00.000Z')) &&
+        (!filters.endDate || batchDate <= new Date(filters.endDate + 'T23:59:59.999Z'));
 
     return matchesSearch && matchesDate;
   });
@@ -492,7 +527,6 @@ function BatchesTable({ searchTerm, filters, onDelete }: { searchTerm: string, f
             <th className="px-6 py-4">{t('inventory.table.entryDate')}</th>
             <th className="px-6 py-4">{t('inventory.table.unitCost')}</th>
             <th className="px-6 py-4">{t('inventory.table.quantity')}</th>
-            <th className="px-6 py-4 text-right">{t('inventory.table.actions')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -506,7 +540,7 @@ function BatchesTable({ searchTerm, filters, onDelete }: { searchTerm: string, f
               <td className="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">
                 {getProductName(batch.productId)}
               </td>
-              <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{batch.entryDate}</td>
+              <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{formatDateForDisplay(batch.entryDate)}</td>
               <td className="px-6 py-4 font-mono font-medium text-slate-700 dark:text-slate-300">{formatCurrency(batch.unitPriceCost)}</td>
               <td className="px-6 py-4">
                 <div className="flex items-center">
@@ -515,21 +549,6 @@ function BatchesTable({ searchTerm, filters, onDelete }: { searchTerm: string, f
                       {batch.quantity}
                     </span>
                   </div>
-              </td>
-              <td className="px-6 py-4 text-right">
-                  <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                          <button className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all">
-                          <MoreHorizontal className="w-5 h-5" />
-                          </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => onDelete(batch.id)}>
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              {t('common.delete')}
-                          </DropdownMenuItem>
-                      </DropdownMenuContent>
-                  </DropdownMenu>
               </td>
             </tr>
           ))}
@@ -550,25 +569,12 @@ function BatchesTable({ searchTerm, filters, onDelete }: { searchTerm: string, f
                   {getProductName(batch.productId)}
                 </h3>
              </div>
-              <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <button className="p-2 -mr-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg">
-                        <MoreHorizontal className="w-5 h-5" />
-                        </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                         <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => onDelete(batch.id)}>
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            {t('common.delete')}
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
            </div>
            
            <div className="flex justify-between items-center text-sm text-slate-500">
               <span className="flex items-center gap-1">
                  <Calendar className="w-3.5 h-3.5" />
-                 {batch.entryDate}
+                 {formatDateForDisplay(batch.entryDate)}
               </span>
            </div>
 

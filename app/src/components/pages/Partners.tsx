@@ -23,7 +23,7 @@ import {
 } from '../ui/dropdown-menu';
 
 export function Partners() {
-  const { providers, customers, isLoading, refresh } = useStore();
+  const { providers, customers, isLoading, refresh, currentUser } = useStore();
   const { t } = useTranslation();
   const [activeModal, setActiveModal] = useState<'provider' | 'customer' | null>(null);
   const [editingPartner, setEditingPartner] = useState<any>(null);
@@ -146,10 +146,12 @@ export function Partners() {
                             <Edit className="w-4 h-4 mr-2" />
                             {t('common.edit')}
                           </DropdownMenuItem>
+                          {currentUser?.role === 'manager' && (
                           <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteProvider(provider.id)}>
                             <Trash2 className="w-4 h-4 mr-2" />
                             {t('common.delete')}
                           </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>
@@ -234,10 +236,12 @@ export function Partners() {
                             <Edit className="w-4 h-4 mr-2" />
                             {t('common.edit')}
                           </DropdownMenuItem>
+                          {currentUser?.role === 'manager' && (
                           <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteCustomer(customer.id)}>
                             <Trash2 className="w-4 h-4 mr-2" />
                             {t('common.delete')}
                           </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>

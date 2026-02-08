@@ -16,7 +16,7 @@ import {
 import { useStore } from '../../lib/StoreContext';
 import CreateOrderDialog from '../modals/CreateOrderDialog';
 import { api } from '../../lib/api';
-import { formatCurrency } from '../../lib/formatters';
+import { formatCurrency, formatDateForDisplay } from '../../lib/formatters';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,7 +54,7 @@ export function Sales() {
     paymentStatus: 'all'
   });
 
-  // Filter sales based on role
+  // Filter sales based on role: staff only see sales where they are the responsible
   const relevantSales = React.useMemo(() => {
     if (currentUser?.role === 'staff') {
       return sales.filter(s => s.managerId === currentUser.id);
@@ -107,7 +107,7 @@ export function Sales() {
         sale.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         getCustomerName(sale.customerId).toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = filters.status === 'all' || sale.status === filters.status;
+    const matchesStatus = filters.status === 'all' || sale.status === filters.status || (filters.status === 'pending' && sale.status === 'draft');
     
     const percentPaid = sale.totalAmount > 0 ? (sale.amountPaid / sale.totalAmount) * 100 : 100;
     const matchesPayment = filters.paymentStatus === 'all' || 
@@ -115,9 +115,10 @@ export function Sales() {
         (filters.paymentStatus === 'unpaid' && percentPaid === 0) ||
         (filters.paymentStatus === 'partial' && percentPaid > 0 && percentPaid < 100);
 
+    const saleDate = new Date(sale.initiationDate);
     const matchesDate = 
-        (!filters.startDate || sale.initiationDate >= filters.startDate) &&
-        (!filters.endDate || sale.initiationDate <= filters.endDate);
+        (!filters.startDate || saleDate >= new Date(filters.startDate + 'T00:00:00.000Z')) &&
+        (!filters.endDate || saleDate <= new Date(filters.endDate + 'T23:59:59.999Z'));
 
     return matchesSearch && matchesStatus && matchesPayment && matchesDate;
   });
@@ -247,10 +248,8 @@ export function Sales() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t('common.allOptions')}</SelectItem>
-                      <SelectItem value="draft">{t('procurement.status.draft')}</SelectItem>
                       <SelectItem value="pending">{t('procurement.status.pending')}</SelectItem>
                       <SelectItem value="completed">{t('procurement.status.completed')}</SelectItem>
-                      <SelectItem value="cancelled">{t('procurement.status.cancelled')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -292,7 +291,14 @@ export function Sales() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {sortedSales.map((sale) => {
+                {sortedSales.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-6 py-16 text-center text-slate-500 dark:text-slate-400 text-sm">
+                      {t('sales.empty', { defaultValue: 'No sales yet' })}
+                    </td>
+                  </tr>
+                ) : (
+                sortedSales.map((sale) => {
                   const percentPaid = sale.totalAmount > 0 ? Math.round((sale.amountPaid / sale.totalAmount) * 100) : 100;
                   return (
                     <tr key={sale.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
@@ -310,15 +316,15 @@ export function Sales() {
                       <td className="px-6 py-4 text-slate-500 dark:text-slate-400">
                           <div className="flex items-center">
                               <Calendar className="w-3.5 h-3.5 mr-2 text-slate-400 dark:text-slate-500" />
-                              {sale.initiationDate}
+                              {formatDateForDisplay(sale.initiationDate)}
                           </div>
                       </td>
                       <td className="px-6 py-4 font-mono font-medium text-slate-700 dark:text-slate-300">{formatCurrency(sale.totalAmount)}</td>
                       <td className="px-6 py-4">
-                        <div className="w-full max-w-[140px]">
-                          <div className="flex justify-between text-xs mb-1.5">
-                              <span className="font-medium text-slate-600 dark:text-slate-400">{percentPaid}%</span>
-                              <span className="text-slate-400 dark:text-slate-500">{formatCurrency(sale.amountPaid)} {t('sales.paid')}</span>
+                        <div className="w-full min-w-[160px] max-w-[180px]">
+                          <div className="flex justify-between items-baseline gap-2 text-xs mb-1.5">
+                              <span className="font-medium text-slate-600 dark:text-slate-400 shrink-0">{percentPaid}%</span>
+                              <span className="text-slate-400 dark:text-slate-500 font-mono text-right tabular-nums min-w-[100px]">{formatCurrency(sale.amountPaid)} {t('sales.paid')}</span>
                           </div>
                           <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                             <div 
@@ -338,11 +344,11 @@ export function Sales() {
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
                           sale.status === 'completed' 
                             ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' 
-                            : sale.status === 'pending'
+                            : sale.status === 'pending' || sale.status === 'draft'
                             ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-900/30'
                             : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                         }`}>
-                          {sale.status === 'completed' ? t('procurement.status.completed') : (sale.status === 'pending' ? t('procurement.status.pending') : t('procurement.status.draft'))}
+                          {sale.status === 'completed' ? t('procurement.status.completed') : (sale.status === 'pending' || sale.status === 'draft' ? t('procurement.status.pending') : t('procurement.status.cancelled'))}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -357,16 +363,19 @@ export function Sales() {
                                       <Edit className="w-4 h-4 mr-2" />
                                       {t('common.edit')}
                                   </DropdownMenuItem>
+                                  {currentUser?.role === 'manager' && (
                                   <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteSale(sale)}>
                                       <Trash2 className="w-4 h-4 mr-2" />
                                       {t('common.delete')}
                                   </DropdownMenuItem>
-                              </DropdownMenuContent>
+                                  )}
+                                  </DropdownMenuContent>
                           </DropdownMenu>
                       </td>
                     </tr>
                   );
-                })}
+                })
+                )}
               </tbody>
             </table>
           </div>
@@ -389,9 +398,9 @@ export function Sales() {
                             #{sale.id.slice(0, 8).toUpperCase()}
                           </span>
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold border ${
-                            sale.status === 'completed' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' : sale.status === 'pending' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                            sale.status === 'completed' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' : sale.status === 'pending' || sale.status === 'draft' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                           }`}>
-                            {sale.status === 'completed' ? t('procurement.status.completed') : (sale.status === 'pending' ? t('procurement.status.pending') : t('procurement.status.draft'))}
+                            {sale.status === 'completed' ? t('procurement.status.completed') : (sale.status === 'pending' || sale.status === 'draft' ? t('procurement.status.pending') : t('procurement.status.cancelled'))}
                           </span>
                         </div>
                         <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">{getCustomerName(sale.customerId)}</h3>
@@ -411,10 +420,12 @@ export function Sales() {
                             <Edit className="w-4 h-4 mr-3" />
                             {t('common.edit')}
                           </DropdownMenuItem>
+                          {currentUser?.role === 'manager' && (
                           <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer py-3 text-sm" onClick={() => handleDeleteSale(sale)}>
                             <Trash2 className="w-4 h-4 mr-3" />
                             {t('common.delete')}
                           </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -424,7 +435,7 @@ export function Sales() {
                       </div>
                       <div className="flex items-center text-xs text-slate-500 dark:text-slate-400">
                         <Calendar className="w-4 h-4 mr-2 shrink-0 text-slate-400 dark:text-slate-500" />
-                        {sale.initiationDate}
+                        {formatDateForDisplay(sale.initiationDate)}
                       </div>
                     </div>
                     <div className="pt-3 border-t border-slate-100 dark:border-slate-800">

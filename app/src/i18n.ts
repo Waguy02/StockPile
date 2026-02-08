@@ -18,6 +18,14 @@ i18n
     fallbackLng: ['fr', 'en'],
     debug: false,
     lng: 'fr',
+    // Only use stored preference (app language switcher); do not use browser language.
+    // So first visit = French by default; user can switch to EN and it is remembered.
+    detection: {
+      order: ['localStorage', 'cookie', 'querystring'],
+      caches: ['localStorage', 'cookie'],
+      lookupLocalStorage: 'i18nextLng',
+      lookupCookie: 'i18next',
+    },
 
     interpolation: {
       escapeValue: false,

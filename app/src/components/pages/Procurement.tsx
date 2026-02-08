@@ -17,7 +17,7 @@ import {
 import { useStore } from '../../lib/StoreContext';
 import CreateOrderDialog from '../modals/CreateOrderDialog';
 import { api } from '../../lib/api';
-import { formatCurrency } from '../../lib/formatters';
+import { formatCurrency, formatDateForDisplay } from '../../lib/formatters';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -145,15 +145,15 @@ export function Procurement() {
                       <td className="px-6 py-4">
                         <div className="flex items-center text-slate-500 dark:text-slate-400">
                           <Calendar className="w-3.5 h-3.5 mr-2 text-slate-400 dark:text-slate-500" />
-                          {po.initiationDate}
+                          {formatDateForDisplay(po.initiationDate)}
                         </div>
                       </td>
                       <td className="px-6 py-4 font-mono font-medium text-slate-700 dark:text-slate-300">{formatCurrency(po.totalAmount)}</td>
                       <td className="px-6 py-4">
-                        <div className="w-full max-w-[140px]">
-                          <div className="flex justify-between text-xs mb-1.5">
-                            <span className="font-medium text-slate-600 dark:text-slate-400">{percentDisplay}%</span>
-                            <span className="text-slate-400 dark:text-slate-500">{formatCurrency(po.amountPaid || 0)} {t('procurement.paid')}</span>
+                        <div className="w-full min-w-[160px] max-w-[180px]">
+                          <div className="flex justify-between items-baseline gap-2 text-xs mb-1.5">
+                            <span className="font-medium text-slate-600 dark:text-slate-400 shrink-0">{percentDisplay}%</span>
+                            <span className="text-slate-400 dark:text-slate-500 font-mono text-right tabular-nums min-w-[100px]">{formatCurrency(Number(po.amountPaid) || 0)} {t('procurement.paid')}</span>
                           </div>
                           <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                             <div className={`h-full rounded-full transition-all duration-500 ${percentDisplay === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ width: `${Math.min(percentDisplay, 100)}%` }} />
@@ -162,9 +162,9 @@ export function Procurement() {
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
-                          po.status === 'completed' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' : po.status === 'pending' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                          po.status === 'completed' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' : po.status === 'pending' || po.status === 'draft' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                         }`}>
-                          {po.status === 'completed' ? t('procurement.status.received') : t(`procurement.status.${po.status}`)}
+                          {po.status === 'completed' ? t('procurement.status.received') : (po.status === 'draft' ? t('procurement.status.pending') : t(`procurement.status.${po.status}`))}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -179,10 +179,12 @@ export function Procurement() {
                               <Edit className="w-4 h-4 mr-2" />
                               {t('common.edit')}
                             </DropdownMenuItem>
+                            {currentUser?.role === 'manager' && (
                             <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteOrder(po)}>
                               <Trash2 className="w-4 h-4 mr-2" />
                               {t('common.delete')}
                             </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -211,9 +213,9 @@ export function Procurement() {
                             #{po.id.slice(0, 8).toUpperCase()}
                           </span>
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold border ${
-                            po.status === 'completed' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' : po.status === 'pending' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                            po.status === 'completed' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' : po.status === 'pending' || po.status === 'draft' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                           }`}>
-                            {po.status === 'completed' ? t('procurement.status.received') : t(`procurement.status.${po.status}`)}
+                            {po.status === 'completed' ? t('procurement.status.received') : (po.status === 'draft' ? t('procurement.status.pending') : t(`procurement.status.${po.status}`))}
                           </span>
                         </div>
                         <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">{getProviderName(po.providerId)}</h3>
@@ -233,16 +235,18 @@ export function Procurement() {
                             <Edit className="w-4 h-4 mr-3" />
                             {t('common.edit')}
                           </DropdownMenuItem>
+                          {currentUser?.role === 'manager' && (
                           <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer py-3 text-sm" onClick={() => handleDeleteOrder(po)}>
                             <Trash2 className="w-4 h-4 mr-3" />
                             {t('common.delete')}
                           </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                     <div className="flex items-center text-xs text-slate-500 dark:text-slate-400">
                       <Calendar className="w-4 h-4 mr-2 shrink-0 text-slate-400 dark:text-slate-500" />
-                      {po.initiationDate}
+                      {formatDateForDisplay(po.initiationDate)}
                     </div>
                     <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
                       <div className="flex justify-between items-end mb-2">

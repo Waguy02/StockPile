@@ -1,4 +1,28 @@
 {
+  "login": {
+    "signIn": "Connexion",
+    "signInToAccount": "Connectez-vous à votre compte",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "changePassword": "Changer le mot de passe",
+    "changePasswordTitle": "Changer le mot de passe",
+    "currentPassword": "Mot de passe actuel",
+    "newPassword": "Nouveau mot de passe",
+    "confirmNewPassword": "Confirmer le nouveau mot de passe",
+    "passwordsMustMatch": "Le nouveau mot de passe et la confirmation doivent être identiques",
+    "passwordChanged": "Mot de passe modifié. Vous êtes connecté.",
+    "submitChangePassword": "Changer le mot de passe",
+    "changePasswordHint": "Saisissez votre mot de passe actuel, puis le nouveau mot de passe deux fois.",
+    "passwordMinLength": "Le mot de passe doit contenir au moins 6 caractères.",
+    "currentPasswordIncorrect": "Le mot de passe actuel est incorrect.",
+    "resetSystemData": "Réinitialiser les données système",
+    "resetSuccess": "Réinitialisation effectuée. Reconnectez-vous.",
+    "resetFailed": "Échec de la réinitialisation",
+    "emailPlaceholder": "vous@entreprise.com",
+    "errorInvalidCredentials": "E-mail ou mot de passe incorrect.",
+    "errorLoginFailed": "Échec de la connexion. Réessayez.",
+    "errorUpdatePasswordFailed": "Impossible de modifier le mot de passe."
+  },
   "nav": {
     "dashboard": "Tableau de bord",
     "inventory": "Inventaire",
@@ -41,6 +65,7 @@
     "viewAllActivity": "Voir toute l'activité",
     "filter": {
         "allTime": "Depuis le début",
+        "last24Hours": "24 dernières heures",
         "last7Days": "7 derniers jours",
         "last30Days": "30 derniers jours",
         "lastTrimester": "Dernier trimestre",
@@ -64,7 +89,8 @@
         "paymentInDesc": "+{{amount}} (Vente #{{ref}}).",
         "paymentOut": "Paiement Sortant",
         "paymentOutDesc": "-{{amount}} (BC #{{ref}}).",
-        "empty": "Aucune activité récente"
+        "empty": "Aucune activité récente",
+        "byResponsible": "Par {{name}}"
     }
   },
   "activity": {
@@ -144,6 +170,18 @@
     "title": "Finance",
     "subtitle": "Suivez vos flux de revenus et dépenses.",
     "exportReport": "Exporter Rapport",
+    "reportTitle": "Rapport financier Odicam",
+    "reportGenerated": "Généré",
+    "reportTimeRange": "Période",
+    "reportPeriodThrough": " — {{date}}",
+    "filterPeriod": "Période",
+    "filterType": "Type d'opération",
+    "filterTypeAll": "Tous",
+    "filterResponsible": "Responsable",
+    "filterResponsibleAll": "Tous",
+    "filterResponsibleUnassigned": "Non assigné",
+    "financialSummary": "Résumé financier",
+    "reportMetric": "Indicateur",
     "totalRevenue": "Revenu Total",
     "totalExpenses": "Dépenses Totales",
     "netFlow": "Flux Net",
@@ -209,7 +247,8 @@
       "clear": "Effacer filtres",
       "apply": "Appliquer"
     },
-    "paid": "payé"
+    "paid": "payé",
+    "empty": "Aucune vente pour le moment"
   },
   "inventory": {
     "title": "Inventaire",
@@ -243,7 +282,10 @@
       "quantity": "Quantité"
     },
     "units": "unités",
-    "includeOutOfStock": "Inclure les produits épuisés"
+    "includeOutOfStock": "Inclure les produits épuisés",
+    "deleteProductTitle": "Supprimer le produit du catalogue",
+    "deleteProductDescription": "« {{name}} » sera définitivement retiré du catalogue. Cette action est irréversible.",
+    "deleteProductConfirm": "Supprimer"
   },
   "modals": {
     "addPartner": {
@@ -337,6 +379,7 @@
       },
       "errors": {
         "completedStatus": "Impossible de modifier le statut d'une commande terminée",
+        "amountPaidExceedsTotal": "Le montant payé ne peut pas dépasser le montant total",
         "selectPartner": "Veuillez sélectionner un {{type}}",
         "insufficientStock": "Impossible de vendre plus que le stock disponible pour le produit sélectionné",
         "stockCreation": "Échec de la création de stock pour un article",
@@ -358,6 +401,7 @@
   },
   "common": {
     "edit": "Modifier",
+    "cancel": "Annuler",
     "delete": "Supprimer",
     "deleteCompleted": "Impossible de supprimer une commande terminée",
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet(te) {{item}} ?",

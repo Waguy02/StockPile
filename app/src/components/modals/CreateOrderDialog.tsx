@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { useQueryClient } from '@tanstack/react-query';
 import { useStore } from '../../lib/StoreContext';
 import { api } from '../../lib/api';
+import { formatAmountForInput, parseAmountToInteger } from '../../lib/formatters';
 
 interface CreateOrderDialogProps {
   open: boolean;
@@ -42,13 +43,14 @@ interface CreateOrderDialogProps {
 function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialogProps) {
   const queryClient = useQueryClient();
   const { providers, customers, products, stockBatches, refresh, currentUser } = useStore();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const amountLocale = i18n.language === 'fr' ? 'fr-FR' : 'en-US';
   const form = useForm({
     defaultValues: {
       partnerId: '',
       totalAmount: '0',
       amountPaid: '0',
-      status: 'draft',
+      status: 'pending',
       notes: '',
       items: [] as { productId: string; quantity: string; unitPrice: string }[],
     }
@@ -70,18 +72,19 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
       const p = parseFloat(String(item.unitPrice)) || 0;
       return sum + (q * p);
     }, 0);
-    
-    // Update total whenever items change
-    form.setValue("totalAmount", total.toFixed(2));
+    const totalInt = String(Math.round(total));
+    form.setValue("totalAmount", totalInt);
+    const paid = parseInt(form.getValues("amountPaid"), 10) || 0;
+    if (paid > Math.round(total)) form.setValue("amountPaid", totalInt);
   }, [watchedItems, form]);
 
   React.useEffect(() => {
     if (order) {
         form.reset({
             partnerId: type === 'purchase' ? (order.providerId || '') : (order.customerId || ''),
-            totalAmount: order.totalAmount?.toString() || '0',
-            amountPaid: order.amountPaid?.toString() || '0',
-            status: order.status || 'draft',
+            totalAmount: String(Math.round(Number(order.totalAmount) || 0)),
+            amountPaid: String(Math.round(Number(order.amountPaid) || 0)),
+            status: (order.status === 'draft' || order.status === 'cancelled') ? 'pending' : (order.status || 'pending'),
             notes: order.notes || '',
             items: order.items?.map((i: any) => ({
                 productId: i.productId,
@@ -94,7 +97,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
             partnerId: '',
             totalAmount: '0',
             amountPaid: '0',
-            status: 'draft',
+            status: 'pending',
             notes: '',
             items: [],
         });
@@ -123,11 +126,18 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
              setIsLoading(false);
              return; 
         }
+        const total = parseInt(String(data.totalAmount), 10) || 0;
+        const paid = parseInt(String(data.amountPaid), 10) || 0;
+        if (paid > total) {
+             toast.error(t('modals.createOrder.errors.amountPaidExceedsTotal'));
+             setIsLoading(false);
+             return;
+        }
 
         const managerId = currentUser?.id ?? '';
         const payload = {
-            totalAmount: Number(data.totalAmount),
-            amountPaid: Number(data.amountPaid),
+            totalAmount: parseInt(String(data.totalAmount), 10) || 0,
+            amountPaid: parseInt(String(data.amountPaid), 10) || 0,
             paymentStatus: Number(data.amountPaid) >= Number(data.totalAmount),
             status: data.status,
             notes: data.notes,
@@ -137,7 +147,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                 quantity: Number(i.quantity),
                 unitPrice: Number(i.unitPrice)
             })) || [],
-            ...(managerId ? { managerId } : {}),
+            managerId,
         };
 
         if (type === 'sale') {
@@ -412,7 +422,13 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                 <FormItem>
                   <FormLabel>{t('modals.createOrder.totalLabel')}</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} />
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={formatAmountForInput(field.value, amountLocale)}
+                      onChange={(e) => field.onChange(parseAmountToInteger(e.target.value))}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -422,11 +438,25 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
             <FormField
               control={form.control}
               name="amountPaid"
+              rules={{
+                validate: (value) => {
+                  const total = parseInt(form.getValues('totalAmount'), 10) || 0;
+                  const paid = parseInt(String(value), 10) || 0;
+                  if (paid > total) return t('modals.createOrder.errors.amountPaidExceedsTotal');
+                  return true;
+                },
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('modals.createOrder.paidLabel')}</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} />
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={formatAmountForInput(field.value, amountLocale)}
+                      onChange={(e) => field.onChange(parseAmountToInteger(e.target.value))}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -450,10 +480,8 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="draft">{t('modals.createOrder.status.draft')}</SelectItem>
                       <SelectItem value="pending">{t('modals.createOrder.status.pending')}</SelectItem>
                       <SelectItem value="completed">{type === 'purchase' ? t('modals.createOrder.status.received') : t('modals.createOrder.status.completed')}</SelectItem>
-                      <SelectItem value="cancelled">{t('modals.createOrder.status.cancelled')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

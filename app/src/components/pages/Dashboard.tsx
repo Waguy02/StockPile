@@ -22,7 +22,7 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useStore } from '../../lib/StoreContext';
-import { formatCurrency } from '../../lib/formatters';
+import { formatCurrency, formatDateForDisplay } from '../../lib/formatters';
 import { ViewState } from '../../lib/data';
 import {
   Select,
@@ -55,12 +55,16 @@ const chartData = [
 ];
 
 export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => void }) {
-  const { stockBatches, sales, purchaseOrders, payments, products, categories, customers, providers, isLoading, currentUser } = useStore();
+  const { stockBatches, sales, purchaseOrders, payments, products, categories, customers, providers, managers, isLoading, currentUser } = useStore();
   const { t } = useTranslation();
   const [timeRange, setTimeRange] = useState('last7Days');
 
   const getCustomerName = (id: string) => customers.find(c => c.id === id)?.name || t('common.unknown');
   const getProviderName = (id: string) => providers.find(p => p.id === id)?.name || t('common.unknown');
+  const getManagerName = (id: string) => {
+    if (id && id === currentUser?.id) return currentUser.name || t('common.unknown');
+    return managers.find(m => m.id === id)?.name || t('common.unknown');
+  };
 
   // RBAC Filtering
   const isStaff = currentUser?.role === 'staff';
@@ -83,25 +87,18 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
   }, [stockBatches, isStaff]);
 
   // --- Recent Activity: all actions (sales, POs, batches, payments) regardless of who
-  type ActivityItem = { key: string; date: string; type: string; title: string; desc: string; nav: ViewState; icon: 'sale' | 'saleUpdated' | 'batch' | 'po' | 'paymentIn' | 'paymentOut'; managerId?: string };
+  type ActivityItem = { key: string; date: string; type: string; title: string; desc: string; nav: ViewState; icon: 'sale' | 'saleUpdated' | 'batch' | 'po' | 'paymentIn' | 'paymentOut'; managerId?: string; responsibleName?: string };
   const recentActivityItems = useMemo(() => {
     const items: ActivityItem[] = [];
     const cust = (id: string) => customers.find(c => c.id === id)?.name || t('common.unknown');
     const prov = (id: string) => providers.find(p => p.id === id)?.name || t('common.unknown');
+    const respName = (managerId: string | undefined) => managerId ? getManagerName(managerId) : undefined;
     sales.forEach(s => {
       const saleIdShort = s.id.slice(0, 8).toUpperCase();
-      items.push({
-        key: `sale-${s.id}`,
-        date: s.initiationDate || '',
-        type: 'sale',
-        title: t('dashboard.activity.newSale'),
-        desc: t('dashboard.activity.saleDesc', { id: saleIdShort, customer: cust(s.customerId) }),
-        nav: 'sales',
-        icon: 'sale',
-        managerId: (s as any).managerId,
-      });
       const updatedAt = (s as any).updatedAt;
-      if (updatedAt && updatedAt !== s.initiationDate) {
+      const isUpdated = updatedAt && updatedAt !== s.initiationDate;
+      const mid = (s as any).managerId;
+      if (isUpdated) {
         items.push({
           key: `sale-updated-${s.id}`,
           date: updatedAt,
@@ -110,11 +107,25 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
           desc: t('dashboard.activity.saleUpdatedDesc', { id: saleIdShort }),
           nav: 'sales',
           icon: 'saleUpdated',
-          managerId: (s as any).managerId,
+          managerId: mid,
+          responsibleName: respName(mid),
+        });
+      } else {
+        items.push({
+          key: `sale-${s.id}`,
+          date: s.initiationDate || '',
+          type: 'sale',
+          title: t('dashboard.activity.newSale'),
+          desc: t('dashboard.activity.saleDesc', { id: saleIdShort, customer: cust(s.customerId) }),
+          nav: 'sales',
+          icon: 'sale',
+          managerId: mid,
+          responsibleName: respName(mid),
         });
       }
     });
     purchaseOrders.forEach(po => {
+      const mid = (po as any).managerId;
       items.push({
         key: `po-${po.id}`,
         date: po.initiationDate || '',
@@ -123,7 +134,8 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
         desc: t('dashboard.activity.purchaseOrderDesc', { id: po.id.slice(0, 8).toUpperCase(), provider: prov(po.providerId) }),
         nav: 'procurement',
         icon: 'po',
-        managerId: (po as any).managerId,
+        managerId: mid,
+        responsibleName: respName(mid),
       });
       if (po.status === 'completed' && po.finalizationDate) {
         items.push({
@@ -134,7 +146,8 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
           desc: t('dashboard.activity.stockReceivedDesc', { id: po.id.slice(0, 8).toUpperCase() }),
           nav: 'procurement',
           icon: 'batch',
-          managerId: (po as any).managerId,
+          managerId: mid,
+          responsibleName: respName(mid),
         });
       }
     });
@@ -153,6 +166,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
       const isIn = p.referenceType === 'sale';
       const refShort = (p.referenceId || '').slice(0, 8).toUpperCase();
       const amountStr = formatCurrency(p.amount);
+      const mid = p.managerId;
       items.push({
         key: `pay-${p.id}`,
         date: p.date || '',
@@ -161,11 +175,12 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
         desc: isIn ? t('dashboard.activity.paymentInDesc', { amount: amountStr, ref: refShort }) : t('dashboard.activity.paymentOutDesc', { amount: amountStr, ref: refShort }),
         nav: 'finance',
         icon: isIn ? 'paymentIn' : 'paymentOut',
-        managerId: p.managerId,
+        managerId: mid,
+        responsibleName: respName(mid),
       });
     });
     return items.sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 4);
-  }, [sales, purchaseOrders, stockBatches, payments, customers, providers, t]);
+  }, [sales, purchaseOrders, stockBatches, payments, customers, providers, managers, currentUser, t]);
 
   // --- Derived Data for New Charts ---
 
@@ -243,6 +258,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
 
   const getDateRangeLabel = () => {
     switch(timeRange) {
+      case 'last24Hours': return t('dashboard.filter.last24Hours');
       case 'last7Days': return t('dashboard.filter.last7Days');
       case 'last30Days': return t('dashboard.filter.last30Days');
       case 'lastTrimester': return t('dashboard.filter.lastTrimester');
@@ -254,6 +270,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
   const getFilteredSales = () => {
     const now = new Date();
     const past = new Date();
+    if (timeRange === 'last24Hours') past.setTime(now.getTime() - 24 * 60 * 60 * 1000);
     if (timeRange === 'last7Days') past.setDate(now.getDate() - 7);
     if (timeRange === 'last30Days') past.setDate(now.getDate() - 30);
     if (timeRange === 'lastTrimester') past.setMonth(now.getMonth() - 3);
@@ -341,12 +358,13 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
           <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{t('dashboard.title')}</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm font-medium">{t('dashboard.subtitle')}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-stretch">
             <Select value={timeRange} onValueChange={setTimeRange}>
               <SelectTrigger className="rounded-lg border-0 ring-1 ring-slate-200 dark:ring-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="last24Hours">{t('dashboard.filter.last24Hours')}</SelectItem>
                 <SelectItem value="last7Days">{t('dashboard.filter.last7Days')}</SelectItem>
                 <SelectItem value="last30Days">{t('dashboard.filter.last30Days')}</SelectItem>
                 <SelectItem value="lastTrimester">{t('dashboard.filter.lastTrimester')}</SelectItem>
@@ -355,9 +373,9 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
             </Select>
             <button 
                 onClick={handleDownloadReport}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md shadow-indigo-200 transition-colors flex items-center gap-2"
+                className="flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 dark:shadow-indigo-900/30 transition-colors whitespace-nowrap"
             >
-                <Download className="w-4 h-4" />
+                <Download className="w-4 h-4 shrink-0" />
                 {t('dashboard.downloadReport')}
             </button>
         </div>
@@ -514,9 +532,12 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
                         <p className="text-sm font-semibold text-slate-900 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                           {item.title}
                         </p>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-full">{item.date}</span>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-full">{formatDateForDisplay(item.date)}</span>
                       </div>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{item.desc}</p>
+                      {item.responsibleName && (
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">{t('dashboard.activity.byResponsible', { name: item.responsibleName })}</p>
+                      )}
                     </div>
                   </div>
                 );
