@@ -253,47 +253,48 @@ export function Finance() {
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden">
-        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
-          <h2 className="font-bold text-slate-900 dark:text-slate-100">{t('finance.transactionHistory')}</h2>
+        <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-800/50">
+          <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base sm:text-lg">{t('finance.transactionHistory')}</h2>
           <div className="flex space-x-2">
-            <button className="p-2 text-slate-500 hover:bg-white hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400 rounded-lg transition-all hover:shadow-sm">
+            <button type="button" className="p-2 text-slate-500 hover:bg-white hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400 rounded-lg transition-all hover:shadow-sm" aria-label="Search">
               <Search className="w-4.5 h-4.5" />
             </button>
-             <button className="p-2 text-slate-500 hover:bg-white hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400 rounded-lg transition-all hover:shadow-sm">
+            <button type="button" className="p-2 text-slate-500 hover:bg-white hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400 rounded-lg transition-all hover:shadow-sm" aria-label="Filter">
               <Filter className="w-4.5 h-4.5" />
             </button>
           </div>
         </div>
 
-        <div className="overflow-x-auto min-h-[400px]">
-          <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
-             <thead className="bg-slate-50/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-xs">
+        {/* Desktop: scrollable table */}
+        <div className="hidden md:block overflow-x-auto min-h-[400px] -mx-px">
+          <table className="w-full min-w-[640px] text-left text-sm text-slate-600 dark:text-slate-400">
+            <thead className="bg-slate-50/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-xs">
               <tr>
-                <th className="px-6 py-4">{t('finance.table.date')}</th>
-                <th className="px-6 py-4">{t('finance.table.type')}</th>
-                <th className="px-6 py-4">{t('finance.table.reference')}</th>
-                <th className="px-6 py-4">{t('finance.table.processedBy')}</th>
-                <th className="px-6 py-4 text-right font-mono tabular-nums">{t('finance.table.amount')}</th>
+                <th className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap">{t('finance.table.date')}</th>
+                <th className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap">{t('finance.table.type')}</th>
+                <th className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap">{t('finance.table.reference')}</th>
+                <th className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap">{t('finance.table.processedBy')}</th>
+                <th className="px-4 lg:px-6 py-3 lg:py-4 text-right font-mono tabular-nums whitespace-nowrap">{t('finance.table.amount')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {sortedPayments.map((payment) => (
                 <tr key={payment.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
-                  <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300">{formatDateForDisplay(payment.date)}</td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 lg:px-6 py-3 lg:py-4 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDateForDisplay(payment.date)}</td>
+                  <td className="px-4 lg:px-6 py-3 lg:py-4">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
-                      payment.referenceType === 'sale' 
-                        ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' 
+                      payment.referenceType === 'sale'
+                        ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30'
                         : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-900/30'
                     }`}>
                       {payment.referenceType === 'sale' ? t('finance.incoming') : t('finance.outgoing')}
                     </span>
                   </td>
-                  <td className="px-6 py-4 font-mono text-xs text-slate-500 dark:text-slate-400">
+                  <td className="px-4 lg:px-6 py-3 lg:py-4 font-mono text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
                     {payment.referenceType === 'sale' ? t('finance.saleRef', { id: payment.referenceId.toUpperCase() }) : t('finance.poRef', { id: payment.referenceId.toUpperCase() })}
                   </td>
-                  <td className="px-6 py-4">{getManagerName(payment.managerId)}</td>
-                  <td className={`px-6 py-4 text-right font-bold font-mono tabular-nums whitespace-nowrap min-w-[140px] ${
+                  <td className="px-4 lg:px-6 py-3 lg:py-4 text-slate-600 dark:text-slate-400">{getManagerName(payment.managerId)}</td>
+                  <td className={`px-4 lg:px-6 py-3 lg:py-4 text-right font-bold font-mono tabular-nums whitespace-nowrap min-w-[120px] lg:min-w-[140px] ${
                     payment.referenceType === 'sale' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                   }`}>
                     {payment.referenceType === 'sale' ? '+' : '-'}{formatCurrency(Number(payment.amount) || 0)}
@@ -304,29 +305,30 @@ export function Finance() {
           </table>
         </div>
 
-        {/* Mobile Transactions List */}
-        <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-          {sortedPayments.map(p => (
-              <div key={p.id} className="p-4 flex justify-between items-center">
-                  <div>
-                       <div className="flex items-center gap-2 mb-1">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
-                              p.referenceType === 'sale' 
-                              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30'
-                              : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-900/30'
-                          }`}>
-                           {p.referenceType === 'sale' ? 'IN' : 'OUT'}
-                        </span>
-                        <span className="font-mono text-xs text-slate-500">
-                            {p.referenceType === 'sale' ? `SALE-${p.referenceId.slice(0,4)}` : `PO-${p.referenceId.slice(0,4)}`}
-                        </span>
-                     </div>
-                     <p className="text-xs text-slate-400">{formatDateForDisplay(p.date)}</p>
+        {/* Mobile: card list */}
+        <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800 min-h-[200px]">
+          {sortedPayments.map((p) => (
+            <div key={p.id} className="p-4 flex justify-between items-start gap-3 active:bg-slate-50/80 dark:active:bg-slate-800/50">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border shrink-0 ${
+                    p.referenceType === 'sale'
+                      ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30'
+                      : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-900/30'
+                  }`}>
+                    {p.referenceType === 'sale' ? t('finance.incoming') : t('finance.outgoing')}
+                  </span>
+                  <span className="font-mono text-xs text-slate-500 dark:text-slate-400 truncate">
+                    {p.referenceType === 'sale' ? t('finance.saleRef', { id: p.referenceId.toUpperCase() }) : t('finance.poRef', { id: p.referenceId.toUpperCase() })}
+                  </span>
                 </div>
-                <div className={`font-mono font-medium tabular-nums ${p.referenceType === 'sale' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                     {p.referenceType === 'sale' ? '+' : '-'}{formatCurrency(Number(p.amount) || 0)}
-                </div>
+                <p className="text-xs text-slate-400">{formatDateForDisplay(p.date)}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{getManagerName(p.managerId)}</p>
               </div>
+              <div className={`font-mono font-semibold tabular-nums text-right shrink-0 min-w-[5rem] ${p.referenceType === 'sale' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                {p.referenceType === 'sale' ? '+' : '-'}{formatCurrency(Number(p.amount) || 0)}
+              </div>
+            </div>
           ))}
         </div>
       </div>
