@@ -20,12 +20,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useStore } from '../../lib/StoreContext';
@@ -150,7 +150,7 @@ export function AddUserDialog({ open, onOpenChange, user, onSaved }: AddUserDial
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-slate-900 dark:text-slate-200">{t('admin.table.role')}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                         <SelectValue placeholder="Select a role" />

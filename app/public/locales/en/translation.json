@@ -6,6 +6,7 @@
     "procurement": "Procurement",
     "sales": "Sales",
     "finance": "Finance",
+    "activity": "Activity",
     "admin": "Admin"
   },
   "shell": {
@@ -50,10 +51,46 @@
     "arriving": "{{count}} arriving",
     "activity": {
         "newSale": "New Sale Recorded",
+        "saleUpdated": "Sale updated",
+        "saleUpdatedDesc": "Sale #{{id}} updated.",
         "stockBatch": "Stock Batch Received",
         "saleDesc": "Order #{{id}} processed for {{customer}}.",
-        "batchDesc": "Batch #{{id}} added to Inventory ({{count}} units)."
+        "batchDesc": "Batch #{{id}} added to Inventory ({{count}} units).",
+        "purchaseOrder": "Purchase Order",
+        "purchaseOrderDesc": "PO #{{id}} created with {{provider}}.",
+        "stockReceived": "Stock Received",
+        "stockReceivedDesc": "PO #{{id}} received.",
+        "paymentIn": "Payment In",
+        "paymentInDesc": "+{{amount}} (Sale #{{ref}}).",
+        "paymentOut": "Payment Out",
+        "paymentOutDesc": "-{{amount}} (PO #{{ref}}).",
+        "empty": "No recent activity"
     }
+  },
+  "activity": {
+    "title": "Activity",
+    "subtitle": "Full history of actions (sales, orders, receipts, payments).",
+    "filterType": "Activity type",
+    "filterTypeAll": "All",
+    "filterDate": "Period",
+    "filterResponsible": "Responsible",
+    "filterResponsibleAll": "All",
+    "filterResponsibleUnknown": "Unknown",
+    "filterSearchPlaceholder": "Search activity…",
+    "filtersLabel": "Filters",
+    "perPage": "{{count}} per page",
+    "tableDate": "Date",
+    "tableType": "Type",
+    "tableDescription": "Description",
+    "tableProducts": "Products",
+    "tableResponsible": "Responsible",
+    "empty": "No activity",
+    "paginationShowing": "{{from}} – {{to}} of {{total}}",
+    "paginationPrev": "Previous",
+    "paginationNext": "Next",
+    "paginationPage": "Page {{current}} / {{total}}",
+    "paginationAriaPrev": "Previous page",
+    "paginationAriaNext": "Next page"
   },
   "admin": {
     "title": "Administration",

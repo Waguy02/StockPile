@@ -42,6 +42,61 @@ const getByPrefix = async (prefix: string) => {
   return await kv.getByPrefix(prefix);
 };
 
+/** Generate an 8-character hexadecimal ID for display (e.g. commande #A1B2C3D4). */
+const generateShortId = () => {
+  const bytes = new Uint8Array(4);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+};
+
+/** Create a transaction line (payment) when amount paid is set or increased. */
+const createPaymentLine = async (
+  referenceId: string,
+  referenceType: "sale" | "purchase_order",
+  amount: number,
+  managerId: string
+) => {
+  if (amount <= 0) return;
+  const id = crypto.randomUUID();
+  const date = new Date().toISOString().split("T")[0];
+  const payment = {
+    id,
+    referenceId,
+    referenceType,
+    date,
+    amount,
+    managerId: managerId || "",
+    status: "completed" as const,
+  };
+  await kv.set(`payment:${id}`, payment);
+};
+
+/** Decrement stock for sale items (FIFO). Throws if insufficient stock. */
+const decrementStockForSaleItems = async (items: { productId: string; quantity: number }[]) => {
+  if (!items?.length) return;
+  const byProduct = new Map<string, number>();
+  for (const it of items) {
+    if (!it.productId || it.quantity <= 0) continue;
+    byProduct.set(it.productId, (byProduct.get(it.productId) ?? 0) + it.quantity);
+  }
+  const batches = await getByPrefix("batch:");
+  for (const [productId, need] of byProduct) {
+    const productBatches = batches
+      .filter((b: any) => b.productId === productId)
+      .sort((a: any, b: any) => (a.entryDate || "").localeCompare(b.entryDate || ""));
+    let remaining = need;
+    for (const batch of productBatches) {
+      if (remaining <= 0) break;
+      const take = Math.min(batch.quantity, remaining);
+      batch.quantity -= take;
+      remaining -= take;
+      if (batch.quantity <= 0) await kv.del(`batch:${batch.id}`);
+      else await kv.set(`batch:${batch.id}`, batch);
+    }
+    if (remaining > 0) throw new Error(`Insufficient stock for product ${productId}`);
+  }
+};
+
 const looksLikeUuid = (value: string) => value.includes('-') && value.length >= 32;
 
 const resolveUserId = async (supabase: any, id: string, email?: string | null) => {
@@ -201,8 +256,20 @@ mainApp.get(`/sales`, async (c) => {
 
 mainApp.post(`/sales`, async (c) => {
   const body = await c.req.json();
-  const id = body.id || crypto.randomUUID();
+  const id = body.id || generateShortId();
   const sale = { ...body, id };
+  if (sale.status === "completed") {
+    const items = sale.items || [];
+    try {
+      await decrementStockForSaleItems(items);
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : "Insufficient stock" }, 400);
+    }
+  }
+  const initialPaid = Number(sale.amountPaid) || 0;
+  if (initialPaid > 0) {
+    await createPaymentLine(sale.id, "sale", initialPaid, sale.managerId || "");
+  }
   await kv.set(`sale:${id}`, sale);
   return c.json(sale);
 });
@@ -210,7 +277,22 @@ mainApp.post(`/sales`, async (c) => {
 mainApp.put(`/sales/:id`, async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json();
-  const sale = { ...body, id };
+  const existing = await kv.get(`sale:${id}`);
+  const sale = { ...(existing || {}), ...body, id };
+  if (sale.status === "completed" && existing?.status !== "completed") {
+    const items = sale.items || [];
+    try {
+      await decrementStockForSaleItems(items);
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : "Insufficient stock" }, 400);
+    }
+  }
+  const oldPaid = Number(existing?.amountPaid) || 0;
+  const newPaid = Number(sale.amountPaid) || 0;
+  if (newPaid > oldPaid) {
+    await createPaymentLine(sale.id, "sale", newPaid - oldPaid, sale.managerId || "");
+  }
+  sale.updatedAt = new Date().toISOString().split("T")[0];
   await kv.set(`sale:${id}`, sale);
   return c.json(sale);
 });
@@ -229,8 +311,15 @@ mainApp.get(`/procurement`, async (c) => {
 
 mainApp.post(`/procurement`, async (c) => {
   const body = await c.req.json();
-  const id = body.id || crypto.randomUUID();
+  const existing = body.id ? await kv.get(`po:${body.id}`) : null;
+  const id = existing ? body.id : (body.id || generateShortId());
   const po = { ...body, id };
+  const oldPaid = Number(existing?.amountPaid) || 0;
+  const newPaid = Number(po.amountPaid) || 0;
+  const delta = newPaid - oldPaid;
+  if (delta > 0) {
+    await createPaymentLine(po.id, "purchase_order", delta, po.managerId || "");
+  }
   await kv.set(`po:${id}`, po);
   return c.json(po);
 });
@@ -238,7 +327,13 @@ mainApp.post(`/procurement`, async (c) => {
 mainApp.put(`/procurement/:id`, async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json();
-  const po = { ...body, id };
+  const existing = await kv.get(`po:${id}`);
+  const po = { ...(existing || {}), ...body, id };
+  const oldPaid = Number(existing?.amountPaid) || 0;
+  const newPaid = Number(po.amountPaid) || 0;
+  if (newPaid > oldPaid) {
+    await createPaymentLine(po.id, "purchase_order", newPaid - oldPaid, po.managerId || "");
+  }
   await kv.set(`po:${id}`, po);
   return c.json(po);
 });

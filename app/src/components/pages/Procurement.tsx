@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   Plus, 
@@ -11,10 +11,11 @@ import {
   Loader2,
   AlertCircle,
   Edit,
-  Trash2
+  Trash2,
+  UserCircle
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
-import { CreateOrderDialog } from '../modals/CreateOrderDialog';
+import CreateOrderDialog from '../modals/CreateOrderDialog';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/formatters';
 import {
@@ -25,13 +26,21 @@ import {
 } from '../ui/dropdown-menu';
 
 export function Procurement() {
-  const { purchaseOrders, providers, managers, isLoading, refresh } = useStore();
+  const { purchaseOrders, providers, managers, currentUser, isLoading, refresh } = useStore();
   const { t } = useTranslation();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   
   const getProviderName = (id: string) => providers.find(p => p.id === id)?.name || t('common.unknown');
-  const getManagerName = (id: string) => managers.find(m => m.id === id)?.name || t('common.unknown');
+  const getManagerName = (id: string) => {
+    if (id && id === currentUser?.id) return currentUser.name || t('common.unknown');
+    return managers.find(m => m.id === id)?.name || t('common.unknown');
+  };
+
+  const sortedPurchaseOrders = useMemo(
+    () => [...purchaseOrders].sort((a, b) => (b.initiationDate || '').localeCompare(a.initiationDate || '')),
+    [purchaseOrders]
+  );
 
   const handleEditOrder = (order: any) => {
     setEditingOrder(order);
@@ -104,97 +113,154 @@ export function Procurement() {
         </div>
 
         <div className="overflow-x-auto min-h-[400px]">
-          <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
-            <thead className="bg-slate-50/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-xs">
-              <tr>
-                <th className="px-6 py-4">{t('procurement.table.orderId')}</th>
-                <th className="px-6 py-4">{t('procurement.table.provider')}</th>
-                <th className="px-6 py-4">{t('procurement.table.date')}</th>
-                <th className="px-6 py-4">{t('procurement.table.totalAmount')}</th>
-                <th className="px-6 py-4">{t('procurement.table.paymentProgress')}</th>
-                <th className="px-6 py-4">{t('procurement.table.status')}</th>
-                <th className="px-6 py-4 text-right">{t('procurement.table.actions')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {purchaseOrders.map((po) => {
-                const amountPaid = po.amountPaid || 0;
-                const percentPaid = po.totalAmount > 0 ? Math.round((amountPaid / po.totalAmount) * 100) : 0;
-                // If total amount is 0 and we have paid 0, it's technically 100% paid if it's free? 
-                // Or maybe 0%? Sales uses : 100. Let's stick to sales logic if totalAmount is 0.
-                // Actually sales logic: sale.totalAmount > 0 ? ... : 100;
-                const percentDisplay = po.totalAmount > 0 ? Math.round((amountPaid / po.totalAmount) * 100) : (po.status === 'completed' ? 100 : 0);
-
-                return (
-                <tr key={po.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
-                  <td className="px-6 py-4">
-                    <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-700 group-hover:border-indigo-200 dark:group-hover:border-indigo-800 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">
-                        #{po.id.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="font-semibold text-slate-900 dark:text-slate-100">{getProviderName(po.providerId)}</div>
-                    <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">{t('procurement.reqBy', { name: getManagerName(po.managerId) })}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                     <div className="flex items-center text-slate-500 dark:text-slate-400">
-                        <Calendar className="w-3.5 h-3.5 mr-2 text-slate-400 dark:text-slate-500" />
-                        {po.initiationDate}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono font-medium text-slate-700 dark:text-slate-300">{formatCurrency(po.totalAmount)}</td>
-                  <td className="px-6 py-4">
-                      <div className="w-full max-w-[140px]">
-                         <div className="flex justify-between text-xs mb-1.5">
+          {/* Desktop Table View */}
+          <div className="hidden md:block">
+            <table className="w-full text-left text-sm text-slate-600 dark:text-slate-400">
+              <thead className="bg-slate-50/80 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-xs">
+                <tr>
+                  <th className="px-6 py-4">{t('procurement.table.orderId')}</th>
+                  <th className="px-6 py-4">{t('procurement.table.provider')}</th>
+                  <th className="px-6 py-4">{t('procurement.table.date')}</th>
+                  <th className="px-6 py-4">{t('procurement.table.totalAmount')}</th>
+                  <th className="px-6 py-4">{t('procurement.table.paymentProgress')}</th>
+                  <th className="px-6 py-4">{t('procurement.table.status')}</th>
+                  <th className="px-6 py-4 text-right">{t('procurement.table.actions')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {sortedPurchaseOrders.map((po) => {
+                  const amountPaid = po.amountPaid || 0;
+                  const percentDisplay = po.totalAmount > 0 ? Math.round((amountPaid / po.totalAmount) * 100) : (po.status === 'completed' ? 100 : 0);
+                  return (
+                    <tr key={po.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
+                      <td className="px-6 py-4">
+                        <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-700 group-hover:border-indigo-200 dark:group-hover:border-indigo-800 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">
+                          #{po.id.slice(0, 8).toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">{getProviderName(po.providerId)}</div>
+                        <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">{t('procurement.reqBy', { name: getManagerName(po.managerId) })}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center text-slate-500 dark:text-slate-400">
+                          <Calendar className="w-3.5 h-3.5 mr-2 text-slate-400 dark:text-slate-500" />
+                          {po.initiationDate}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 font-mono font-medium text-slate-700 dark:text-slate-300">{formatCurrency(po.totalAmount)}</td>
+                      <td className="px-6 py-4">
+                        <div className="w-full max-w-[140px]">
+                          <div className="flex justify-between text-xs mb-1.5">
                             <span className="font-medium text-slate-600 dark:text-slate-400">{percentDisplay}%</span>
                             <span className="text-slate-400 dark:text-slate-500">{formatCurrency(po.amountPaid || 0)} {t('procurement.paid')}</span>
-                         </div>
-                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full transition-all duration-500 ${percentDisplay === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`} 
-                            style={{ width: `${Math.min(percentDisplay, 100)}%` }}
-                          ></div>
+                          </div>
+                          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                            <div className={`h-full rounded-full transition-all duration-500 ${percentDisplay === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ width: `${Math.min(percentDisplay, 100)}%` }} />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                          po.status === 'completed' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' : po.status === 'pending' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                        }`}>
+                          {po.status === 'completed' ? t('procurement.status.received') : t(`procurement.status.${po.status}`)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all">
+                              <MoreHorizontal className="w-5 h-5" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem className="cursor-pointer" onClick={() => handleEditOrder(po)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              {t('common.edit')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteOrder(po)}>
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              {t('common.delete')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden divide-y divide-slate-200 dark:divide-slate-700">
+            {sortedPurchaseOrders.length === 0 ? (
+              <div className="px-5 py-16 text-center text-slate-500 dark:text-slate-400 text-sm">
+                {t('procurement.empty', { defaultValue: 'No purchase orders yet' })}
+              </div>
+            ) : (
+              sortedPurchaseOrders.map((po) => {
+                const percentDisplay = po.totalAmount > 0 ? Math.round(((po.amountPaid || 0) / po.totalAmount) * 100) : (po.status === 'completed' ? 100 : 0);
+                return (
+                  <div key={po.id} className="p-5 space-y-4 active:bg-slate-50 dark:active:bg-slate-800/50 transition-colors">
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700">
+                            #{po.id.slice(0, 8).toUpperCase()}
+                          </span>
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold border ${
+                            po.status === 'completed' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' : po.status === 'pending' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                          }`}>
+                            {po.status === 'completed' ? t('procurement.status.received') : t(`procurement.status.${po.status}`)}
+                          </span>
+                        </div>
+                        <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">{getProviderName(po.providerId)}</h3>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center mt-1">
+                          <UserCircle className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                          <span className="truncate">{getManagerName(po.managerId)}</span>
                         </div>
                       </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
-                      po.status === 'completed' 
-                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' 
-                        : po.status === 'pending'
-                        ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/30'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
-                    }`}>
-                      {po.status === 'completed' ? t('procurement.status.received') : t(`procurement.status.${po.status}`)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-all">
-                          <MoreHorizontal className="w-5 h-5" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                         <DropdownMenuItem 
-                          className="cursor-pointer" 
-                          onClick={() => handleEditOrder(po)}
-                        >
-                            <Edit className="w-4 h-4 mr-2" />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="shrink-0 p-2.5 -m-2.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center">
+                            <MoreHorizontal className="w-5 h-5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="min-w-[160px]">
+                          <DropdownMenuItem className="cursor-pointer py-3 text-sm" onClick={() => handleEditOrder(po)}>
+                            <Edit className="w-4 h-4 mr-3" />
                             {t('common.edit')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteOrder(po)}>
-                            <Trash2 className="w-4 h-4 mr-2" />
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer py-3 text-sm" onClick={() => handleDeleteOrder(po)}>
+                            <Trash2 className="w-4 h-4 mr-3" />
                             {t('common.delete')}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    <div className="flex items-center text-xs text-slate-500 dark:text-slate-400">
+                      <Calendar className="w-4 h-4 mr-2 shrink-0 text-slate-400 dark:text-slate-500" />
+                      {po.initiationDate}
+                    </div>
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                      <div className="flex justify-between items-end mb-2">
+                        <p className="font-mono font-medium text-slate-900 dark:text-slate-100">{formatCurrency(po.totalAmount)}</p>
+                        <div className="text-right">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{t('procurement.paid')}: {formatCurrency(po.amountPaid || 0)}</p>
+                          <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">{percentDisplay}%</p>
+                        </div>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-500 ${percentDisplay === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ width: `${Math.min(percentDisplay, 100)}%` }} />
+                      </div>
+                    </div>
+                  </div>
                 );
-              })}
-            </tbody>
-          </table>
+              })
+            )}
+          </div>
         </div>
       </div>
     </div>

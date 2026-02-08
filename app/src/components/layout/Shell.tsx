@@ -6,7 +6,6 @@ import {
   Settings, 
   Truck, 
   LogOut,
-  Bell,
   Search,
   Menu,
   ChevronRight,
@@ -46,9 +45,7 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
 
   const filteredNavItems = navItems.filter(item => {
     if (!currentUser) return true;
-    if (currentUser.role === 'staff') {
-      return ['sales', 'inventory'].includes(item.id);
-    }
+    if (currentUser.role === 'staff') return ['sales', 'inventory'].includes(item.id);
     return true;
   });
 
@@ -137,9 +134,17 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
                 <span className="md:hidden text-lg font-bold text-slate-800 dark:text-slate-100">Odicam</span>
                 
                 <div className="hidden md:flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                    <span className="hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer transition-colors">{t('shell.app')}</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-600" />
-                    <span className="font-medium text-slate-800 dark:text-slate-200 capitalize">{t(`nav.${currentView}`)}</span>
+                    <span onClick={() => currentView === 'activity' && onNavigate('dashboard')} className={`${currentView === 'activity' ? 'cursor-pointer hover:text-slate-800 dark:hover:text-slate-200' : ''} transition-colors`}>{t('shell.app')}</span>
+                    <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-600 shrink-0" />
+                    {currentView === 'activity' ? (
+                      <>
+                        <span onClick={() => onNavigate('dashboard')} className="cursor-pointer hover:text-slate-800 dark:hover:text-slate-200 transition-colors">{t('nav.dashboard')}</span>
+                        <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-600 shrink-0" />
+                        <span className="font-medium text-slate-800 dark:text-slate-200">{t('nav.activity')}</span>
+                      </>
+                    ) : (
+                      <span className="font-medium text-slate-800 dark:text-slate-200 capitalize">{t(`nav.${currentView}`)}</span>
+                    )}
                 </div>
             </div>
           </div>
@@ -184,11 +189,6 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
                 />
               </div>
 
-              {/* Notifications */}
-              <button className="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:text-slate-400 dark:hover:text-indigo-400 dark:hover:bg-indigo-900/50 rounded-full transition-all duration-200">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-slate-900 ring-1 ring-rose-500/20"></span>
-              </button>
           </div>
         </header>
 

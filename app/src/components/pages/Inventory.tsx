@@ -228,13 +228,13 @@ export function Inventory() {
                         <>
                              <div className="space-y-2">
                                 <Label htmlFor="category">{t('inventory.categories')}</Label>
-                                <Select value={filters.categoryId} onValueChange={(v) => setFilters({...filters, categoryId: v})}>
+                                <Select value={filters.categoryId} onValueChange={(v) => setFilters({ ...filters, categoryId: v })}>
                                     <SelectTrigger id="category" className="h-9">
                                         <SelectValue placeholder={t('common.allOptions')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">{t('common.allOptions')}</SelectItem>
-                                        {categories.map(c => (
+                                        {categories.map((c) => (
                                             <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                         ))}
                                     </SelectContent>

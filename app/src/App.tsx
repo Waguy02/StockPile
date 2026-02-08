@@ -7,6 +7,7 @@ import { Procurement } from './components/pages/Procurement';
 import { Sales } from './components/pages/Sales';
 import { Finance } from './components/pages/Finance';
 import { Admin } from './components/pages/Admin';
+import { Activity } from './components/pages/Activity';
 import { ViewState } from './lib/data';
 import { StoreProvider, useStore } from './lib/StoreContext';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -56,6 +57,8 @@ function AppContent() {
         return <Sales />;
       case 'finance':
         return <Finance />;
+      case 'activity':
+        return <Activity />;
       case 'admin':
         return <Admin />;
       default:

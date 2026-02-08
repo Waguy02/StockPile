@@ -14,7 +14,7 @@ import {
   X
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
-import { CreateOrderDialog } from '../modals/CreateOrderDialog';
+import CreateOrderDialog from '../modals/CreateOrderDialog';
 import { api } from '../../lib/api';
 import { formatCurrency } from '../../lib/formatters';
 import {
@@ -63,7 +63,10 @@ export function Sales() {
   }, [sales, currentUser]);
 
   const getCustomerName = (id: string) => customers.find(c => c.id === id)?.name || t('common.unknown');
-  const getManagerName = (id: string) => managers.find(m => m.id === id)?.name || t('common.unknown');
+  const getManagerName = (id: string) => {
+    if (id && id === currentUser?.id) return currentUser.name || t('common.unknown');
+    return managers.find(m => m.id === id)?.name || t('common.unknown');
+  };
   const getProductName = (id: string) => products.find(p => p.id === id)?.name || t('common.unknown');
 
   const handleEditSale = (sale: any) => {
@@ -118,6 +121,11 @@ export function Sales() {
 
     return matchesSearch && matchesStatus && matchesPayment && matchesDate;
   });
+
+  const sortedSales = React.useMemo(
+    () => [...filteredSales].sort((a, b) => (b.initiationDate || '').localeCompare(a.initiationDate || '')),
+    [filteredSales]
+  );
 
   const getProductsDisplay = (items: any[]) => {
     if (!items || items.length === 0) return '-';
@@ -233,7 +241,7 @@ export function Sales() {
 
                 <div className="space-y-2">
                   <Label htmlFor="status">{t('sales.table.status')}</Label>
-                  <Select value={filters.status} onValueChange={(v) => setFilters({...filters, status: v})}>
+                  <Select value={filters.status} onValueChange={(v) => setFilters({ ...filters, status: v })}>
                     <SelectTrigger id="status" className="h-9">
                       <SelectValue placeholder={t('common.allOptions')} />
                     </SelectTrigger>
@@ -249,14 +257,14 @@ export function Sales() {
 
                 <div className="space-y-2">
                   <Label htmlFor="payment">{t('sales.filters.paymentStatus')}</Label>
-                  <Select value={filters.paymentStatus} onValueChange={(v) => setFilters({...filters, paymentStatus: v})}>
+                  <Select value={filters.paymentStatus} onValueChange={(v) => setFilters({ ...filters, paymentStatus: v })}>
                     <SelectTrigger id="payment" className="h-9">
                       <SelectValue placeholder={t('common.allOptions')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t('common.allOptions')}</SelectItem>
                       <SelectItem value="paid">{t('sales.paid')}</SelectItem>
-                      <SelectItem value="partial">{t('procurement.status.pending')}</SelectItem> {/* Reusing pending for partial/unpaid roughly or just hardcode for now */}
+                      <SelectItem value="partial">{t('procurement.status.pending')}</SelectItem>
                       <SelectItem value="unpaid">Unpaid</SelectItem>
                     </SelectContent>
                   </Select>
@@ -284,7 +292,7 @@ export function Sales() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {filteredSales.map((sale) => {
+                {sortedSales.map((sale) => {
                   const percentPaid = sale.totalAmount > 0 ? Math.round((sale.amountPaid / sale.totalAmount) * 100) : 100;
                   return (
                     <tr key={sale.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
@@ -364,82 +372,77 @@ export function Sales() {
           </div>
 
           {/* Mobile Card View */}
-          <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-            {filteredSales.map((sale) => {
-              const percentPaid = sale.totalAmount > 0 ? Math.round((sale.amountPaid / sale.totalAmount) * 100) : 100;
-              return (
-                <div key={sale.id} className="p-4 space-y-4">
-                  <div className="flex justify-between items-start">
-                     <div>
-                       <div className="flex items-center gap-2 mb-1">
-                          <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-700">
-                             #{sale.id.slice(0, 8).toUpperCase()}
+          <div className="md:hidden divide-y divide-slate-200 dark:divide-slate-700">
+            {sortedSales.length === 0 ? (
+              <div className="px-5 py-16 text-center text-slate-500 dark:text-slate-400 text-sm">
+                {t('sales.empty', { defaultValue: 'No sales yet' })}
+              </div>
+            ) : (
+              sortedSales.map((sale) => {
+                const percentPaid = sale.totalAmount > 0 ? Math.round((sale.amountPaid / sale.totalAmount) * 100) : 100;
+                return (
+                  <div key={sale.id} className="p-5 space-y-4 active:bg-slate-50 dark:active:bg-slate-800/50 transition-colors">
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700">
+                            #{sale.id.slice(0, 8).toUpperCase()}
                           </span>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                            sale.status === 'completed' 
-                              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' 
-                              : sale.status === 'pending'
-                              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-900/30'
-                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold border ${
+                            sale.status === 'completed' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30' : sale.status === 'pending' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-900/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                           }`}>
                             {sale.status === 'completed' ? t('procurement.status.completed') : (sale.status === 'pending' ? t('procurement.status.pending') : t('procurement.status.draft'))}
                           </span>
-                       </div>
-                       <h3 className="font-semibold text-slate-900 dark:text-slate-100">{getCustomerName(sale.customerId)}</h3>
-                       <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center mt-1">
-                          <UserCircle className="w-3 h-3 mr-1" />
-                          {getManagerName(sale.managerId)}
-                       </div>
-                     </div>
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                        <button className="p-2 -mr-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg">
-                            <MoreHorizontal className="w-5 h-5" />
-                        </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem className="cursor-pointer" onClick={() => handleEditSale(sale)}>
-                                <Edit className="w-4 h-4 mr-2" />
-                                {t('common.edit')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteSale(sale)}>
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                {t('common.delete')}
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  <div className="space-y-2">
-                     <div className="text-sm text-slate-500 dark:text-slate-400">
-                       {getProductsDisplay(sale.items || [])}
-                     </div>
-                     <div className="flex items-center text-xs text-slate-400 dark:text-slate-500">
-                        <Calendar className="w-3.5 h-3.5 mr-1.5" />
-                        {sale.initiationDate}
-                     </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
-                     <div className="flex justify-between items-end mb-2">
-                        <div>
-                           <p className="font-mono font-medium text-slate-900 dark:text-slate-100">{formatCurrency(sale.totalAmount)}</p>
                         </div>
-                        <div className="text-right">
-                           <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('sales.paid')}: {formatCurrency(sale.amountPaid)}</p>
-                           <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{percentPaid}%</p>
+                        <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">{getCustomerName(sale.customerId)}</h3>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center mt-1">
+                          <UserCircle className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                          <span className="truncate">{getManagerName(sale.managerId)}</span>
                         </div>
-                     </div>
-                     <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full transition-all duration-500 ${percentPaid === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`} 
-                          style={{ width: `${percentPaid}%` }}
-                        ></div>
                       </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="shrink-0 p-2.5 -m-2.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center">
+                            <MoreHorizontal className="w-5 h-5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="min-w-[160px]">
+                          <DropdownMenuItem className="cursor-pointer py-3 text-sm" onClick={() => handleEditSale(sale)}>
+                            <Edit className="w-4 h-4 mr-3" />
+                            {t('common.edit')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer py-3 text-sm" onClick={() => handleDeleteSale(sale)}>
+                            <Trash2 className="w-4 h-4 mr-3" />
+                            {t('common.delete')}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-sm text-slate-500 dark:text-slate-400">
+                        {getProductsDisplay(sale.items || [])}
+                      </div>
+                      <div className="flex items-center text-xs text-slate-500 dark:text-slate-400">
+                        <Calendar className="w-4 h-4 mr-2 shrink-0 text-slate-400 dark:text-slate-500" />
+                        {sale.initiationDate}
+                      </div>
+                    </div>
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                      <div className="flex justify-between items-end mb-2">
+                        <p className="font-mono font-medium text-slate-900 dark:text-slate-100">{formatCurrency(sale.totalAmount)}</p>
+                        <div className="text-right">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{t('sales.paid')}: {formatCurrency(sale.amountPaid)}</p>
+                          <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{percentPaid}%</p>
+                        </div>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-500 ${percentPaid === 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ width: `${percentPaid}%` }} />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
       </div>

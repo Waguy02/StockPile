@@ -12,13 +12,23 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useStore } from '../../lib/StoreContext';
 import { formatCurrency } from '../../lib/formatters';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 
 export function Finance() {
-  const { payments, managers, isLoading } = useStore();
+  const { payments, managers, currentUser, isLoading } = useStore();
   const { t } = useTranslation();
   const [timeRange, setTimeRange] = useState('all');
 
-  const getManagerName = (id: string) => managers.find(m => m.id === id)?.name || t('common.unknown');
+  const getManagerName = (id: string) => {
+    if (id && id === currentUser?.id) return currentUser.name || t('common.unknown');
+    return managers.find(m => m.id === id)?.name || t('common.unknown');
+  };
 
   const getFilteredPayments = () => {
     if (timeRange === 'all') return payments;
@@ -34,6 +44,10 @@ export function Finance() {
   };
 
   const filteredPayments = getFilteredPayments();
+  const sortedPayments = React.useMemo(
+    () => [...filteredPayments].sort((a, b) => (b.date || '').localeCompare(a.date || '')),
+    [filteredPayments]
+  );
   const totalInflow = filteredPayments.filter(p => p.referenceType === 'sale').reduce((acc, p) => acc + p.amount, 0);
   const totalOutflow = filteredPayments.filter(p => p.referenceType === 'purchase_order').reduce((acc, p) => acc + p.amount, 0);
 
@@ -79,7 +93,7 @@ export function Finance() {
     autoTable(doc, {
         startY: currentY,
         head: [['Date', 'Type', 'Reference', 'Processed By', 'Amount']],
-        body: filteredPayments.map(p => [
+        body: sortedPayments.map(p => [
             p.date,
             p.referenceType === 'sale' ? t('finance.incoming') : t('finance.outgoing'),
             p.referenceType === 'sale' ? `Sale #${p.referenceId.toUpperCase()}` : `PO #${p.referenceId.toUpperCase()}`,
@@ -109,17 +123,18 @@ export function Finance() {
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm font-medium">{t('finance.subtitle')}</p>
         </div>
         <div className="flex gap-2">
-          <select 
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm cursor-pointer hover:border-slate-300 dark:hover:border-slate-700"
-            >
-                <option value="all">{t('dashboard.filter.allTime')}</option>
-                <option value="last7Days">{t('dashboard.filter.last7Days')}</option>
-                <option value="last30Days">{t('dashboard.filter.last30Days')}</option>
-                <option value="lastTrimester">{t('dashboard.filter.lastTrimester')}</option>
-                <option value="lastYear">{t('dashboard.filter.lastYear')}</option>
-            </select>
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 h-10">
+              <SelectValue placeholder={t('dashboard.filter.allTime')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('dashboard.filter.allTime')}</SelectItem>
+              <SelectItem value="last7Days">{t('dashboard.filter.last7Days')}</SelectItem>
+              <SelectItem value="last30Days">{t('dashboard.filter.last30Days')}</SelectItem>
+              <SelectItem value="lastTrimester">{t('dashboard.filter.lastTrimester')}</SelectItem>
+              <SelectItem value="lastYear">{t('dashboard.filter.lastYear')}</SelectItem>
+            </SelectContent>
+          </Select>
           <button 
             onClick={handleDownloadReport}
             className="flex items-center px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium text-sm transition-all shadow-sm hover:border-slate-300 dark:hover:border-slate-700"
@@ -189,7 +204,7 @@ export function Finance() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {filteredPayments.map((payment) => (
+              {sortedPayments.map((payment) => (
                 <tr key={payment.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
                   <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300">{payment.date}</td>
                   <td className="px-6 py-4">
@@ -218,7 +233,7 @@ export function Finance() {
 
         {/* Mobile Transactions List */}
         <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-          {filteredPayments.map(p => (
+          {sortedPayments.map(p => (
               <div key={p.id} className="p-4 flex justify-between items-center">
                   <div>
                        <div className="flex items-center gap-2 mb-1">

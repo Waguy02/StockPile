@@ -12,7 +12,8 @@ import {
   PieChart as PieChartIcon,
   BarChart3,
   TrendingUp,
-  Activity
+  Activity,
+  Truck
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -23,6 +24,13 @@ import autoTable from 'jspdf-autotable';
 import { useStore } from '../../lib/StoreContext';
 import { formatCurrency } from '../../lib/formatters';
 import { ViewState } from '../../lib/data';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 
 // --- Colors for Charts ---
 // More refined palette
@@ -47,9 +55,12 @@ const chartData = [
 ];
 
 export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => void }) {
-  const { stockBatches, sales, purchaseOrders, products, categories, isLoading, currentUser } = useStore();
+  const { stockBatches, sales, purchaseOrders, payments, products, categories, customers, providers, isLoading, currentUser } = useStore();
   const { t } = useTranslation();
   const [timeRange, setTimeRange] = useState('last7Days');
+
+  const getCustomerName = (id: string) => customers.find(c => c.id === id)?.name || t('common.unknown');
+  const getProviderName = (id: string) => providers.find(p => p.id === id)?.name || t('common.unknown');
 
   // RBAC Filtering
   const isStaff = currentUser?.role === 'staff';
@@ -70,6 +81,91 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
     if (isStaff) return []; // Staff cannot see stock batches
     return stockBatches;
   }, [stockBatches, isStaff]);
+
+  // --- Recent Activity: all actions (sales, POs, batches, payments) regardless of who
+  type ActivityItem = { key: string; date: string; type: string; title: string; desc: string; nav: ViewState; icon: 'sale' | 'saleUpdated' | 'batch' | 'po' | 'paymentIn' | 'paymentOut'; managerId?: string };
+  const recentActivityItems = useMemo(() => {
+    const items: ActivityItem[] = [];
+    const cust = (id: string) => customers.find(c => c.id === id)?.name || t('common.unknown');
+    const prov = (id: string) => providers.find(p => p.id === id)?.name || t('common.unknown');
+    sales.forEach(s => {
+      const saleIdShort = s.id.slice(0, 8).toUpperCase();
+      items.push({
+        key: `sale-${s.id}`,
+        date: s.initiationDate || '',
+        type: 'sale',
+        title: t('dashboard.activity.newSale'),
+        desc: t('dashboard.activity.saleDesc', { id: saleIdShort, customer: cust(s.customerId) }),
+        nav: 'sales',
+        icon: 'sale',
+        managerId: (s as any).managerId,
+      });
+      const updatedAt = (s as any).updatedAt;
+      if (updatedAt && updatedAt !== s.initiationDate) {
+        items.push({
+          key: `sale-updated-${s.id}`,
+          date: updatedAt,
+          type: 'saleUpdated',
+          title: t('dashboard.activity.saleUpdated'),
+          desc: t('dashboard.activity.saleUpdatedDesc', { id: saleIdShort }),
+          nav: 'sales',
+          icon: 'saleUpdated',
+          managerId: (s as any).managerId,
+        });
+      }
+    });
+    purchaseOrders.forEach(po => {
+      items.push({
+        key: `po-${po.id}`,
+        date: po.initiationDate || '',
+        type: 'purchaseOrder',
+        title: t('dashboard.activity.purchaseOrder'),
+        desc: t('dashboard.activity.purchaseOrderDesc', { id: po.id.slice(0, 8).toUpperCase(), provider: prov(po.providerId) }),
+        nav: 'procurement',
+        icon: 'po',
+        managerId: (po as any).managerId,
+      });
+      if (po.status === 'completed' && po.finalizationDate) {
+        items.push({
+          key: `po-received-${po.id}`,
+          date: po.finalizationDate,
+          type: 'stockReceived',
+          title: t('dashboard.activity.stockReceived'),
+          desc: t('dashboard.activity.stockReceivedDesc', { id: po.id.slice(0, 8).toUpperCase() }),
+          nav: 'procurement',
+          icon: 'batch',
+          managerId: (po as any).managerId,
+        });
+      }
+    });
+    stockBatches.forEach(b => {
+      items.push({
+        key: `batch-${b.id}`,
+        date: b.entryDate || '',
+        type: 'batch',
+        title: t('dashboard.activity.stockBatch'),
+        desc: t('dashboard.activity.batchDesc', { id: b.id.slice(0, 8).toUpperCase(), count: b.quantity }),
+        nav: 'inventory',
+        icon: 'batch',
+      });
+    });
+    payments.forEach(p => {
+      const isIn = p.referenceType === 'sale';
+      const refShort = (p.referenceId || '').slice(0, 8).toUpperCase();
+      const amountStr = formatCurrency(p.amount);
+      items.push({
+        key: `pay-${p.id}`,
+        date: p.date || '',
+        type: isIn ? 'paymentIn' : 'paymentOut',
+        title: isIn ? t('dashboard.activity.paymentIn') : t('dashboard.activity.paymentOut'),
+        desc: isIn ? t('dashboard.activity.paymentInDesc', { amount: amountStr, ref: refShort }) : t('dashboard.activity.paymentOutDesc', { amount: amountStr, ref: refShort }),
+        nav: 'finance',
+        icon: isIn ? 'paymentIn' : 'paymentOut',
+        managerId: p.managerId,
+      });
+    });
+    return items.sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 4);
+  }, [sales, purchaseOrders, stockBatches, payments, customers, providers, t]);
 
   // --- Derived Data for New Charts ---
 
@@ -246,16 +342,17 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm font-medium">{t('dashboard.subtitle')}</p>
         </div>
         <div className="flex gap-2">
-            <select 
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              className="bg-white dark:bg-slate-900 border-0 ring-1 ring-slate-200 dark:ring-slate-800 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm cursor-pointer"
-            >
-                <option value="last7Days">{t('dashboard.filter.last7Days')}</option>
-                <option value="last30Days">{t('dashboard.filter.last30Days')}</option>
-                <option value="lastTrimester">{t('dashboard.filter.lastTrimester')}</option>
-                <option value="lastYear">{t('dashboard.filter.lastYear')}</option>
-            </select>
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="rounded-lg border-0 ring-1 ring-slate-200 dark:ring-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 h-10">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="last7Days">{t('dashboard.filter.last7Days')}</SelectItem>
+                <SelectItem value="last30Days">{t('dashboard.filter.last30Days')}</SelectItem>
+                <SelectItem value="lastTrimester">{t('dashboard.filter.lastTrimester')}</SelectItem>
+                <SelectItem value="lastYear">{t('dashboard.filter.lastYear')}</SelectItem>
+              </SelectContent>
+            </Select>
             <button 
                 onClick={handleDownloadReport}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md shadow-indigo-200 transition-colors flex items-center gap-2"
@@ -393,39 +490,41 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
               <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t('dashboard.recentActivity')}</h2>
           </div>
           <div className="space-y-6 flex-1 overflow-auto pr-2 custom-scrollbar">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div 
-                key={i} 
-                onClick={() => onNavigate(i % 2 === 0 ? 'sales' : 'inventory')}
-                className="flex items-start gap-4 group cursor-pointer"
-              >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                    i % 2 === 0 
-                        ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30' 
-                        : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30'
-                }`}>
-                  {i % 2 === 0 ? <DollarSign className="w-5 h-5" /> : <Package className="w-5 h-5" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start">
-                     <p className="text-sm font-semibold text-slate-900 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                        {i % 2 === 0 ? t('dashboard.activity.newSale') : t('dashboard.activity.stockBatch')}
-                    </p>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-full">2h</span>
+            {recentActivityItems.length === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400">{t('dashboard.activity.empty')}</p>
+            ) : (
+              recentActivityItems.map((item) => {
+                const iconClass = (item.icon === 'sale' || item.icon === 'saleUpdated') ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30'
+                  : item.icon === 'batch' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30'
+                  : item.icon === 'po' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 group-hover:bg-amber-100 dark:group-hover:bg-amber-900/30'
+                  : item.icon === 'paymentIn' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/30'
+                  : 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 group-hover:bg-rose-100 dark:group-hover:bg-rose-900/30';
+                const Icon = (item.icon === 'sale' || item.icon === 'saleUpdated') ? DollarSign : item.icon === 'batch' ? Package : item.icon === 'po' ? Truck : item.icon === 'paymentIn' ? ArrowDownRight : ArrowUpRight;
+                return (
+                  <div
+                    key={item.key}
+                    onClick={() => onNavigate(item.nav)}
+                    className="flex items-start gap-4 group cursor-pointer"
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${iconClass}`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                          {item.title}
+                        </p>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded-full">{item.date}</span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{item.desc}</p>
+                    </div>
                   </div>
-                 
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                    {i % 2 === 0 
-                        ? t('dashboard.activity.saleDesc', { id: '2490', customer: 'Acme Corp.' }) 
-                        : t('dashboard.activity.batchDesc', { id: 'B-902', count: 50 })
-                    }
-                  </p>
-                </div>
-              </div>
-            ))}
+                );
+              })
+            )}
           </div>
           <button 
-            onClick={() => onNavigate('finance')}
+            onClick={() => onNavigate('activity')}
             className="w-full mt-6 py-3 text-sm text-indigo-600 dark:text-indigo-400 font-semibold bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-xl transition-all duration-200"
           >
             {t('dashboard.viewAllActivity')}

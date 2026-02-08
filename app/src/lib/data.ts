@@ -5,7 +5,8 @@ import {
   CreditCard, 
   BarChart3, 
   Settings, 
-  Truck
+  Truck,
+  Activity
 } from 'lucide-react';
 
 // --- Data Types based on Domain Entities ---
@@ -100,7 +101,7 @@ export type Manager = {
 
 // --- Navigation ---
 
-export type ViewState = 'dashboard' | 'inventory' | 'partners' | 'procurement' | 'sales' | 'finance' | 'admin';
+export type ViewState = 'dashboard' | 'inventory' | 'partners' | 'procurement' | 'sales' | 'finance' | 'activity' | 'admin';
 
 export const navItems = [
   { id: 'dashboard', label: 'nav.dashboard', icon: BarChart3 },
@@ -109,5 +110,6 @@ export const navItems = [
   { id: 'procurement', label: 'nav.procurement', icon: Truck },
   { id: 'sales', label: 'nav.sales', icon: ShoppingCart },
   { id: 'finance', label: 'nav.finance', icon: CreditCard },
+  { id: 'activity', label: 'nav.activity', icon: Activity },
   { id: 'admin', label: 'nav.admin', icon: Settings },
 ];

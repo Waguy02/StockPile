@@ -20,14 +20,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useQueryClient } from '@tanstack/react-query';
 import { useStore } from '../../lib/StoreContext';
 import { api } from '../../lib/api';
 
@@ -38,8 +39,9 @@ interface CreateOrderDialogProps {
   order?: any;
 }
 
-export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialogProps) {
-  const { providers, customers, products, stockBatches, refresh } = useStore();
+function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialogProps) {
+  const queryClient = useQueryClient();
+  const { providers, customers, products, stockBatches, refresh, currentUser } = useStore();
   const { t } = useTranslation();
   const form = useForm({
     defaultValues: {
@@ -122,6 +124,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
              return; 
         }
 
+        const managerId = currentUser?.id ?? '';
         const payload = {
             totalAmount: Number(data.totalAmount),
             amountPaid: Number(data.amountPaid),
@@ -134,6 +137,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                 quantity: Number(i.quantity),
                 unitPrice: Number(i.unitPrice)
             })) || [],
+            ...(managerId ? { managerId } : {}),
         };
 
         if (type === 'sale') {
@@ -184,7 +188,7 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                 await api.updatePO(order.id, {
                     ...order,
                     ...payload,
-                    providerId: data.partnerId, // Ensure we send current partnerId
+                    providerId: data.partnerId,
                 });
                 toast.success(t('modals.createOrder.success.purchaseUpdated'));
             } else {
@@ -216,17 +220,20 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
             }
         } else {
             if (order) {
-                await api.updateSale(order.id, {
+                const updated = await api.updateSale(order.id, {
                     ...order,
                     ...payload,
                     customerId: data.partnerId,
                 });
+                queryClient.setQueryData(['appData'], (old: any) =>
+                  old ? { ...old, sales: (old.sales || []).map((s: any) => s.id === updated.id ? updated : s) } : old
+                );
                 toast.success(t('modals.createOrder.success.saleUpdated'));
             } else {
                 await api.createSale({
                     ...payload,
                     customerId: data.partnerId,
-                    amountPaid: Number(data.amountPaid)
+                    amountPaid: Number(data.amountPaid),
                 });
                 toast.success(t('modals.createOrder.success.saleCreated'));
             }
@@ -273,14 +280,13 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {type === 'purchase' 
+                      {type === 'purchase'
                         ? providers.map((p) => (
                             <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                           ))
                         : customers.map((c) => (
                             <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                          ))
-                      }
+                          ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -319,15 +325,15 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
                     render={({ field }) => (
                       <FormItem className="flex-1 w-full">
                         <FormLabel className="text-xs">{t('modals.createOrder.productLabel')}</FormLabel>
-                        <Select 
-                            onValueChange={(val) => {
-                                field.onChange(val);
-                                const prod = products.find(p => p.id === val);
-                                if (prod && type === 'sale') {
-                                    form.setValue(`items.${index}.unitPrice`, prod.baseUnitPrice.toString());
-                                }
-                            }} 
-                            value={field.value}
+                        <Select
+                          onValueChange={(val) => {
+                            field.onChange(val);
+                            const prod = products.find(p => p.id === val);
+                            if (prod && type === 'sale') {
+                              form.setValue(`items.${index}.unitPrice`, prod.baseUnitPrice.toString());
+                            }
+                          }}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger className="w-full">
@@ -433,8 +439,8 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('modals.createOrder.statusLabel')}</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
+                  <Select
+                    onValueChange={field.onChange}
                     value={field.value}
                     disabled={order?.status === 'completed'}
                   >
@@ -481,3 +487,6 @@ export function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrd
     </Dialog>
   );
 }
+
+export { CreateOrderDialog };
+export default CreateOrderDialog;

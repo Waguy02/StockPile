@@ -6,6 +6,7 @@
     "procurement": "Approvisionnement",
     "sales": "Ventes",
     "finance": "Finance",
+    "activity": "Activité",
     "admin": "Administration"
   },
   "shell": {
@@ -50,10 +51,46 @@
     "arriving": "{{count}} en arrivée",
     "activity": {
         "newSale": "Nouvelle Vente Enregistrée",
+        "saleUpdated": "Mise à jour de la vente",
+        "saleUpdatedDesc": "Vente #{{id}} mise à jour.",
         "stockBatch": "Lot de Stock Reçu",
         "saleDesc": "Commande #{{id}} traitée pour {{customer}}.",
-        "batchDesc": "Lot #{{id}} ajouté à l'inventaire ({{count}} unités)."
+        "batchDesc": "Lot #{{id}} ajouté à l'inventaire ({{count}} unités).",
+        "purchaseOrder": "Commande Fournisseur",
+        "purchaseOrderDesc": "BC #{{id}} créé avec {{provider}}.",
+        "stockReceived": "Réception de Stock",
+        "stockReceivedDesc": "BC #{{id}} reçu.",
+        "paymentIn": "Paiement Entrant",
+        "paymentInDesc": "+{{amount}} (Vente #{{ref}}).",
+        "paymentOut": "Paiement Sortant",
+        "paymentOutDesc": "-{{amount}} (BC #{{ref}}).",
+        "empty": "Aucune activité récente"
     }
+  },
+  "activity": {
+    "title": "Activité",
+    "subtitle": "Historique exhaustif des actions (ventes, commandes, réceptions, paiements).",
+    "filterType": "Type d'activité",
+    "filterTypeAll": "Tous",
+    "filterDate": "Période",
+    "filterResponsible": "Responsable",
+    "filterResponsibleAll": "Tous",
+    "filterResponsibleUnknown": "Inconnu",
+    "filterSearchPlaceholder": "Rechercher dans l'activité…",
+    "filtersLabel": "Filtres",
+    "perPage": "{{count}} par page",
+    "tableDate": "Date",
+    "tableType": "Type",
+    "tableDescription": "Description",
+    "tableProducts": "Produits",
+    "tableResponsible": "Responsable",
+    "empty": "Aucune activité",
+    "paginationShowing": "{{from}} – {{to}} sur {{total}}",
+    "paginationPrev": "Précédent",
+    "paginationNext": "Suivant",
+    "paginationPage": "Page {{current}} / {{total}}",
+    "paginationAriaPrev": "Page précédente",
+    "paginationAriaNext": "Page suivante"
   },
   "admin": {
     "title": "Administration",
