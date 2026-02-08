@@ -19,13 +19,22 @@ ANDROID_API_LEVEL="${ANDROID_API_LEVEL:-35}"
 ANDROID_CMDLINE_VERSION="${ANDROID_CMDLINE_VERSION:-11076708}"
 CMDLINE_URL="https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_VERSION}_latest.zip"
 
-echo "=== Installing Java 17 and utilities ==="
-apt-get update -qq
-apt-get install -y openjdk-17-jdk unzip wget
+echo "=== Installing Java 21 and utilities ==="
+# Capacitor Android requires Java 21 (source release 21). AGP 8 needs at least Java 17.
+# Continue even if some third-party PPAs fail (e.g. missing Release); Java is from main repos
+apt-get update -qq || true
+if ! apt-get install -y openjdk-21-jdk unzip wget; then
+  echo ""
+  echo "Install failed. If you see errors about missing Release files, disable the broken PPAs:"
+  echo "  sudo add-apt-repository --remove ppa:camel-neeraj/sysmontask"
+  echo "  sudo add-apt-repository --remove ppa:gezakovacs/ppa"
+  echo "  Then run this script again."
+  exit 1
+fi
 
-echo "=== Setting default Java to 17 ==="
-update-alternatives --set java "$(update-alternatives --list java | grep -E 'java-17|openjdk-17' | head -1)" 2>/dev/null || true
-update-alternatives --set javac "$(update-alternatives --list javac | grep -E 'java-17|openjdk-17' | head -1)" 2>/dev/null || true
+echo "=== Setting default Java to 21 ==="
+update-alternatives --set java "$(update-alternatives --list java | grep -E 'java-21|openjdk-21' | head -1)" 2>/dev/null || true
+update-alternatives --set javac "$(update-alternatives --list javac | grep -E 'java-21|openjdk-21' | head -1)" 2>/dev/null || true
 
 echo "=== Installing Android SDK to ${ANDROID_SDK_ROOT} ==="
 mkdir -p "${ANDROID_SDK_ROOT}"
@@ -75,6 +84,13 @@ yes 2>/dev/null | sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" --licenses || true
 sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" "platform-tools"
 sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" "platforms;android-${ANDROID_API_LEVEL}"
 sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" "build-tools;35.0.0"
+sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" "build-tools;34.0.0"
+
+# So the user who ran sudo can run Gradle without root (and so Gradle can install components if needed)
+if [[ -n "${SUDO_USER}" ]]; then
+  echo "=== Making SDK writable by ${SUDO_USER} ==="
+  chown -R "${SUDO_USER}:${SUDO_USER}" "${ANDROID_SDK_ROOT}"
+fi
 
 echo "=== Writing environment file ==="
 ENV_FILE="/etc/profile.d/odicam-android-build.sh"
@@ -83,11 +99,11 @@ cat > "$ENV_FILE" << EOF
 export ANDROID_HOME="${ANDROID_SDK_ROOT}"
 export ANDROID_SDK_ROOT="${ANDROID_SDK_ROOT}"
 export PATH="\${ANDROID_HOME}/cmdline-tools/latest/bin:\${ANDROID_HOME}/platform-tools:\${PATH}"
-# Use Java 17 for Gradle/AGP
+# Use Java 21 for Gradle/AGP and Capacitor (requires source release 21)
 if command -v update-alternatives >/dev/null 2>&1; then
-  JAVA17=\$(update-alternatives --list java 2>/dev/null | grep -E 'java-17|openjdk-17' | head -1)
-  if [[ -n "\$JAVA17" ]]; then
-    export JAVA_HOME=\$(dirname "\$(dirname "\$JAVA17")")
+  JAVA21=\$(update-alternatives --list java 2>/dev/null | grep -E 'java-21|openjdk-21' | head -1)
+  if [[ -n "\$JAVA21" ]]; then
+    export JAVA_HOME=\$(dirname "\$(dirname "\$JAVA21")")
   fi
 fi
 EOF
@@ -107,7 +123,7 @@ fi
 echo ""
 echo "=== Done ==="
 echo "  ANDROID_SDK_ROOT = ${ANDROID_SDK_ROOT}"
-echo "  Java 17 and Android SDK (platform-tools, platform ${ANDROID_API_LEVEL}, build-tools 35.0.0) are installed."
+echo "  Java 21 and Android SDK (platform-tools, platform ${ANDROID_API_LEVEL}, build-tools 34/35) are installed."
 echo ""
 echo "To use in this shell: source ${ENV_FILE}"
 echo "Then from the project: cd app && npm run build:apk"

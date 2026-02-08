@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">OdicamStock</string>
+    <string name="title_activity_main">OdicamStock</string>
+    <string name="package_name">com.stockpile.app</string>
+    <string name="custom_url_scheme">com.stockpile.app</string>
+</resources>
