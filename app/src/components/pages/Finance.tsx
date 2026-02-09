@@ -6,7 +6,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Download,
-  Loader2
+  Loader2,
+  Package
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -21,7 +22,7 @@ import {
 } from '../ui/select';
 
 export function Finance() {
-  const { payments, managers, currentUser, isLoading } = useStore();
+  const { payments, managers, currentUser, isLoading, products, stockBatches } = useStore();
   const { t, i18n } = useTranslation();
   const [timeRange, setTimeRange] = useState('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'sale' | 'purchase_order'>('all');
@@ -63,6 +64,15 @@ export function Finance() {
   );
   const totalInflow = filteredPayments.filter(p => p.referenceType === 'sale').reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
   const totalOutflow = filteredPayments.filter(p => p.referenceType === 'purchase_order').reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+
+  const totalStockValue = React.useMemo(
+    () =>
+      (products || []).reduce((sum, p) => {
+        const qty = (stockBatches || []).filter((b: { productId: string; quantity: number }) => b.productId === p.id).reduce((s: number, b: { quantity: number }) => s + b.quantity, 0);
+        return sum + qty * p.baseUnitPrice;
+      }, 0),
+    [products, stockBatches]
+  );
 
   const handleDownloadReport = () => {
     const doc = new jsPDF();
@@ -218,7 +228,7 @@ export function Finance() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex items-center justify-between group hover:shadow-lg transition-all">
           <div>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.totalRevenue')}</p>
@@ -248,6 +258,16 @@ export function Finance() {
           </div>
            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl">
             <DollarSignIcon className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex items-center justify-between group hover:shadow-lg transition-all">
+          <div>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.totalStockValue')}</p>
+            <h3 className="text-3xl font-bold text-slate-700 dark:text-slate-200 mt-1 tracking-tight tabular-nums group-hover:scale-105 transition-transform origin-left">{formatCurrency(totalStockValue)}</h3>
+          </div>
+          <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl">
+            <Package className="w-6 h-6" />
           </div>
         </div>
       </div>

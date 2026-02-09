@@ -108,6 +108,15 @@ export function Inventory() {
 
   const isManager = currentUser?.role === 'manager';
 
+  const totalStockValue = React.useMemo(
+    () =>
+      products.reduce((sum, p) => {
+        const qty = stockBatches.filter((b) => b.productId === p.id).reduce((s, b) => s + b.quantity, 0);
+        return sum + qty * p.baseUnitPrice;
+      }, 0),
+    [products, stockBatches]
+  );
+
   if (isLoading) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
@@ -142,7 +151,17 @@ export function Inventory() {
           </div>
         )}
       </div>
-      
+
+      {isManager && (
+        <div className="flex items-center gap-3 px-5 py-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-slate-900 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)]">
+          <PackageOpen className="w-5 h-5 text-indigo-500 dark:text-indigo-400 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('inventory.totalStockValue')}</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums mt-0.5">{formatCurrency(totalStockValue)}</p>
+          </div>
+        </div>
+      )}
+
       <AddProductDialog 
         open={isAddProductOpen} 
         onOpenChange={handleCloseProductDialog} 
@@ -373,12 +392,14 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
             <th className="px-6 py-4">{t('inventory.table.category')}</th>
             <th className="px-6 py-4">{t('inventory.table.basePrice')}</th>
             <th className="px-6 py-4">{t('inventory.table.totalStock')}</th>
+            <th className="px-6 py-4 font-mono tabular-nums">{t('inventory.table.stockValue')}</th>
             {showActions && <th className="px-6 py-4 text-right">{t('inventory.table.actions')}</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
           {filteredProducts.map((product) => {
             const totalStock = getTotalStock(product.id);
+            const lineStockValue = totalStock * product.baseUnitPrice;
 
             return (
               <tr key={product.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
@@ -398,6 +419,7 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
                     <span className={`font-semibold ${totalStock < 10 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300'}`}>{totalStock} {t('inventory.units')}</span>
                   </div>
                 </td>
+                <td className="px-6 py-4 font-mono font-medium text-slate-700 dark:text-slate-300 tabular-nums">{formatCurrency(lineStockValue)}</td>
                 {showActions && (
                   <td className="px-6 py-4 text-right">
                     <DropdownMenu>
@@ -434,6 +456,7 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
         const totalStock = stockBatches
           .filter(b => b.productId === product.id)
           .reduce((sum, b) => sum + b.quantity, 0);
+        const lineStockValue = totalStock * product.baseUnitPrice;
 
         return (
           <div key={product.id} className="p-4 space-y-3">
@@ -481,6 +504,10 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
                         {totalStock} {t('inventory.units')}
                     </span>
                 </div>
+             </div>
+             <div className="flex justify-between items-center text-sm pt-1">
+                <span className="text-slate-500 dark:text-slate-400">{t('inventory.table.stockValue')}</span>
+                <span className="font-mono font-medium text-slate-700 dark:text-slate-300 tabular-nums">{formatCurrency(lineStockValue)}</span>
              </div>
           </div>
         );

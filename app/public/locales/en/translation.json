@@ -46,6 +46,8 @@
     "totalInventory": "Total Inventory",
     "itemsInStock": "Items in stock",
     "totalRevenue": "Total Revenue",
+    "totalStockValue": "Total stock value",
+    "totalStockValueSubtitle": "Current stock at base price",
     "currentFiscalYear": "Current fiscal year",
     "lowStock": "Low Stock",
     "batchesBelowThreshold": "Batches below threshold",
@@ -175,6 +177,7 @@
     "totalRevenue": "Total Revenue",
     "totalExpenses": "Total Expenses",
     "netFlow": "Net Flow",
+    "totalStockValue": "Total stock value",
     "transactionHistory": "Transaction History",
     "table": {
       "date": "Date",
@@ -243,6 +246,7 @@
   "inventory": {
     "title": "Inventory",
     "subtitle": "Manage your product catalog and track stock levels in real-time.",
+    "totalStockValue": "Total stock value",
     "categories": "Categories",
     "addProduct": "Add Product",
     "tab": {
@@ -263,6 +267,7 @@
       "category": "Category",
       "basePrice": "Base Price",
       "totalStock": "Total Stock",
+      "stockValue": "Stock value",
       "status": "Status",
       "actions": "Actions",
       "batchLabel": "Batch Label",

@@ -46,6 +46,8 @@
     "totalInventory": "Inventaire Total",
     "itemsInStock": "Articles en stock",
     "totalRevenue": "Revenu Total",
+    "totalStockValue": "Valeur totale du stock",
+    "totalStockValueSubtitle": "Stock actuel au prix de base",
     "currentFiscalYear": "Année fiscale en cours",
     "lowStock": "Stock Faible",
     "batchesBelowThreshold": "Lots sous le seuil",
@@ -185,6 +187,7 @@
     "totalRevenue": "Revenu Total",
     "totalExpenses": "Dépenses Totales",
     "netFlow": "Flux Net",
+    "totalStockValue": "Valeur totale du stock",
     "transactionHistory": "Historique des Transactions",
     "table": {
       "date": "Date",
@@ -253,6 +256,7 @@
   "inventory": {
     "title": "Inventaire",
     "subtitle": "Gérez votre catalogue produit et suivez les niveaux de stock en temps réel.",
+    "totalStockValue": "Valeur totale du stock",
     "categories": "Catégories",
     "addProduct": "Ajouter Produit",
     "tab": {
@@ -273,6 +277,7 @@
       "category": "Catégorie",
       "basePrice": "Prix Base",
       "totalStock": "Stock Total",
+      "stockValue": "Valeur stock",
       "status": "Statut",
       "actions": "Actions",
       "batchLabel": "Étiquette Lot",

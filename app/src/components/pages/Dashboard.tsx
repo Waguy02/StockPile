@@ -284,6 +284,15 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
   const lowStockItems = relevantBatches.filter(b => b.quantity < 10).length;
   const pendingOrders = relevantOrders.filter(p => p.status === 'pending').length;
 
+  const totalStockValue = useMemo(
+    () =>
+      products.reduce((sum, p) => {
+        const qty = relevantBatches.filter((b) => b.productId === p.id).reduce((s, b) => s + b.quantity, 0);
+        return sum + qty * p.baseUnitPrice;
+      }, 0),
+    [products, relevantBatches]
+  );
+
   const handleDownloadReport = () => {
     const doc = new jsPDF();
     
@@ -386,6 +395,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
         <StatCard 
           title={t('dashboard.totalInventory')}
           value={isStaff ? 'N/A' : totalStockCount.toString()} 
+          secondaryValue={isStaff ? undefined : formatCurrency(totalStockValue)}
           subtitle={isStaff ? 'Restricted Access' : t('dashboard.itemsInStock')}
           icon={Package}
           trend={isStaff ? '' : "+12%"}
@@ -774,13 +784,14 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
   );
 }
 
-function StatCard({ title, value, subtitle, icon: Icon, trend, trendUp, variant, onClick }: any) {
+function StatCard({ title, value, secondaryValue, subtitle, icon: Icon, trend, trendUp, variant, onClick }: any) {
   const styles: any = {
     blue: { bg: "bg-blue-500", text: "text-blue-600 dark:text-blue-400", light: "bg-blue-50 dark:bg-blue-900/20" },
     green: { bg: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", light: "bg-emerald-50 dark:bg-emerald-900/20" },
     red: { bg: "bg-rose-500", text: "text-rose-600 dark:text-rose-400", light: "bg-rose-50 dark:bg-rose-900/20" },
     purple: { bg: "bg-violet-500", text: "text-violet-600 dark:text-violet-400", light: "bg-violet-50 dark:bg-violet-900/20" },
     orange: { bg: "bg-amber-500", text: "text-amber-600 dark:text-amber-400", light: "bg-amber-50 dark:bg-amber-900/20" },
+    slate: { bg: "bg-slate-500", text: "text-slate-600 dark:text-slate-400", light: "bg-slate-100 dark:bg-slate-800" },
   };
 
   const s = styles[variant] || styles.blue;
@@ -794,6 +805,9 @@ function StatCard({ title, value, subtitle, icon: Icon, trend, trendUp, variant,
         <div>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
           <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2 tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{value}</h3>
+          {secondaryValue != null && secondaryValue !== '' && (
+            <p className="text-base font-semibold text-slate-600 dark:text-slate-300 mt-1.5 tabular-nums">{secondaryValue}</p>
+          )}
         </div>
         <div className={`p-3.5 rounded-xl ${s.light} group-hover:scale-110 transition-transform duration-300`}>
           <Icon className={`w-6 h-6 ${s.text}`} />
