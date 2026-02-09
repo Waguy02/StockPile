@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
 import CreateOrderDialog from '../modals/CreateOrderDialog';
+import { ConfirmDeleteDialog } from '../common/ConfirmDeleteDialog';
 import { api } from '../../lib/api';
 import { formatCurrency, formatDateForDisplay } from '../../lib/formatters';
 import {
@@ -30,6 +31,7 @@ export function Procurement() {
   const { t } = useTranslation();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
+  const [orderToDelete, setOrderToDelete] = useState<any>(null);
   
   const getProviderName = (id: string) => providers.find(p => p.id === id)?.name || t('common.unknown');
   const getManagerName = (id: string) => {
@@ -47,15 +49,19 @@ export function Procurement() {
     setIsCreateOpen(true);
   };
 
-  const handleDeleteOrder = async (po: any) => {
+  const handleRequestDeleteOrder = (po: any) => {
     if (po.status === 'completed') {
-        alert(t('common.deleteCompleted'));
-        return;
+      alert(t('common.deleteCompleted'));
+      return;
     }
-    if (confirm(t('common.confirmDelete', { item: 'purchase order' }))) {
-        await api.deletePO(po.id);
-        await refresh();
-    }
+    setOrderToDelete(po);
+  };
+
+  const handleConfirmDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    await api.deletePO(orderToDelete.id);
+    await refresh();
+    setOrderToDelete(null);
   };
 
   const handleCloseDialog = (open: boolean) => {
@@ -94,6 +100,16 @@ export function Procurement() {
         onOpenChange={handleCloseDialog} 
         type="purchase" 
         order={editingOrder} 
+      />
+
+      <ConfirmDeleteDialog
+        open={!!orderToDelete}
+        onOpenChange={(open) => !open && setOrderToDelete(null)}
+        title={t('common.confirmDeleteTitle')}
+        description={t('common.confirmDelete', { item: t('procurement.purchaseOrder') })}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleConfirmDeleteOrder}
       />
 
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden">
@@ -180,7 +196,7 @@ export function Procurement() {
                               {t('common.edit')}
                             </DropdownMenuItem>
                             {currentUser?.role === 'manager' && (
-                            <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteOrder(po)}>
+                            <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleRequestDeleteOrder(po)}>
                               <Trash2 className="w-4 h-4 mr-2" />
                               {t('common.delete')}
                             </DropdownMenuItem>
@@ -236,7 +252,7 @@ export function Procurement() {
                             {t('common.edit')}
                           </DropdownMenuItem>
                           {currentUser?.role === 'manager' && (
-                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer py-3 text-sm" onClick={() => handleDeleteOrder(po)}>
+                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer py-3 text-sm" onClick={() => handleRequestDeleteOrder(po)}>
                             <Trash2 className="w-4 h-4 mr-3" />
                             {t('common.delete')}
                           </DropdownMenuItem>

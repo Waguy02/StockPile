@@ -123,6 +123,11 @@
   "admin": {
     "title": "Administration",
     "subtitle": "System configuration and user access control.",
+    "userItem": "user",
+    "resetDatabase": "Reset Database",
+    "confirmResetTitle": "Reset database",
+    "confirmReset": "Are you sure you want to reset the database to default data? This action cannot be undone.",
+    "resetSuccess": "Database reset successfully.",
     "addUser": "Add User",
     "editUser": "Edit User",
     "addUserDesc": "Create a new user profile with specific access rights.",
@@ -145,6 +150,8 @@
   "partners": {
     "title": "Partners",
     "subtitle": "Manage your relationships with providers and customers.",
+    "provider": "provider",
+    "customer": "customer",
     "providers": "Providers",
     "customers": "Customers",
     "total": "Total",
@@ -194,6 +201,7 @@
   "procurement": {
     "title": "Procurement",
     "subtitle": "Create and track purchase orders with your suppliers.",
+    "purchaseOrder": "purchase order",
     "createOrder": "Create Order",
     "searchPlaceholder": "Search by Order ID, Provider...",
     "filterStatus": "Filter Status",
@@ -219,6 +227,7 @@
   "sales": {
     "title": "Sales Orders",
     "subtitle": "Manage and track customer orders from draft to completion.",
+    "saleItem": "sale",
     "newSale": "New Sale",
     "searchPlaceholder": "Search sales...",
     "filter": "Filter",
@@ -377,6 +386,7 @@
         "amountPaidExceedsTotal": "Amount paid cannot exceed total amount",
         "selectPartner": "Please select a {{type}}",
         "insufficientStock": "Cannot sell more than available stock for selected product",
+        "atLeastOneProduct": "The order must contain at least one product with a quantity greater than zero.",
         "stockCreation": "Failed to create stock for one item",
         "saveFailed": "Failed to save order: {{error}}"
       },
@@ -399,7 +409,8 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "deleteCompleted": "Cannot delete a completed order",
-    "confirmDelete": "Are you sure you want to delete this {{item}}?",
+    "confirmDeleteTitle": "Confirm deletion",
+    "confirmDelete": "Are you sure you want to delete this {{item}}? This action cannot be undone.",
     "unknown": "Unknown",
     "allOptions": "All",
     "error": "An error occurred"

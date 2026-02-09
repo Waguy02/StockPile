@@ -15,6 +15,7 @@ import {
 import { useStore } from '../../lib/StoreContext';
 import { api } from '../../lib/api';
 import { AddPartnerDialog } from '../modals/AddPartnerDialog';
+import { ConfirmDeleteDialog } from '../common/ConfirmDeleteDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,11 +23,14 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 
+type DeleteTarget = { type: 'provider' | 'customer'; id: string; name: string };
+
 export function Partners() {
   const { providers, customers, isLoading, refresh, currentUser } = useStore();
   const { t } = useTranslation();
   const [activeModal, setActiveModal] = useState<'provider' | 'customer' | null>(null);
   const [editingPartner, setEditingPartner] = useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
 
   const handleEdit = (type: 'provider' | 'customer', partner: any) => {
     setEditingPartner(partner);
@@ -38,18 +42,23 @@ export function Partners() {
     setEditingPartner(null);
   };
 
-  const handleDeleteProvider = async (id: string) => {
-    if (confirm('Are you sure you want to delete this provider?')) {
-      await api.deleteProvider(id);
-      await refresh();
-    }
+  const handleRequestDeleteProvider = (id: string, name: string) => {
+    setDeleteTarget({ type: 'provider', id, name });
   };
 
-  const handleDeleteCustomer = async (id: string) => {
-    if (confirm('Are you sure you want to delete this customer?')) {
-      await api.deleteCustomer(id);
-      await refresh();
+  const handleRequestDeleteCustomer = (id: string, name: string) => {
+    setDeleteTarget({ type: 'customer', id, name });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.type === 'provider') {
+      await api.deleteProvider(deleteTarget.id);
+    } else {
+      await api.deleteCustomer(deleteTarget.id);
     }
+    await refresh();
+    setDeleteTarget(null);
   };
 
   if (isLoading) {
@@ -74,6 +83,16 @@ export function Partners() {
         onOpenChange={(open) => !open && closeModal()} 
         type={activeModal || 'provider'}
         partner={editingPartner} 
+      />
+
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title={t('common.confirmDeleteTitle')}
+        description={deleteTarget ? t('common.confirmDelete', { item: deleteTarget.type === 'provider' ? t('partners.provider') : t('partners.customer') }) : ''}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleConfirmDelete}
       />
 
 
@@ -147,7 +166,7 @@ export function Partners() {
                             {t('common.edit')}
                           </DropdownMenuItem>
                           {currentUser?.role === 'manager' && (
-                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteProvider(provider.id)}>
+                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleRequestDeleteProvider(provider.id, provider.name)}>
                             <Trash2 className="w-4 h-4 mr-2" />
                             {t('common.delete')}
                           </DropdownMenuItem>
@@ -237,7 +256,7 @@ export function Partners() {
                             {t('common.edit')}
                           </DropdownMenuItem>
                           {currentUser?.role === 'manager' && (
-                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteCustomer(customer.id)}>
+                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleRequestDeleteCustomer(customer.id, customer.name)}>
                             <Trash2 className="w-4 h-4 mr-2" />
                             {t('common.delete')}
                           </DropdownMenuItem>

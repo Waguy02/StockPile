@@ -11,6 +11,7 @@ import {
 import { useStore } from '../../lib/StoreContext';
 import { AddUserDialog } from '../modals/AddUserDialog';
 import { ChangePasswordDialog } from '../modals/ChangePasswordDialog';
+import { ConfirmDeleteDialog } from '../common/ConfirmDeleteDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +29,8 @@ export function Admin() {
   const [userList, setUserList] = useState<any[]>([]);
   const [isUsersLoading, setIsUsersLoading] = useState(true);
   const [usersError, setUsersError] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setIsUsersLoading(true);
@@ -72,21 +75,24 @@ export function Admin() {
       await loadUsers();
   };
 
-  const handleDeleteUser = async (user: any) => {
-      if (confirm(t('common.confirmDelete', { item: 'user' }))) {
-          await api.deleteUser(user.id, user.email);
-          await refresh();
-          await loadUsers();
-      }
+  const handleRequestDeleteUser = (user: any) => {
+    setUserToDelete(user);
   };
 
-  const handleResetDatabase = async () => {
-    if (confirm(t('admin.confirmReset', 'Are you sure you want to reset the database to default data? This cannot be undone.'))) {
-      await api.seed(true);
-      await refresh();
-      await loadUsers();
-      alert('Database reset successfully.');
-    }
+  const handleConfirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    await api.deleteUser(userToDelete.id, userToDelete.email);
+    await refresh();
+    await loadUsers();
+    setUserToDelete(null);
+  };
+
+  const handleConfirmReset = async () => {
+    await api.seed(true);
+    await refresh();
+    await loadUsers();
+    setResetConfirmOpen(false);
+    alert(t('admin.resetSuccess', 'Database reset successfully.'));
   };
 
   const handleAddUser = () => {
@@ -112,7 +118,7 @@ export function Admin() {
         {currentUser?.role === 'manager' && (
             <div className="flex gap-2">
                 <button 
-                    onClick={handleResetDatabase}
+                    onClick={() => setResetConfirmOpen(true)}
                     className="flex items-center px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-rose-200 dark:shadow-rose-900/30 transition-all hover:-translate-y-0.5"
                 >
                     <Trash2 className="w-4 h-4 mr-2" />
@@ -206,7 +212,7 @@ export function Admin() {
                                 )}
                             </DropdownMenuItem>
                             {currentUser?.id !== manager.id && (
-                                <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteUser(manager)}>
+                                <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleRequestDeleteUser(manager)}>
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     {t('common.delete')}
                                 </DropdownMenuItem>
@@ -270,7 +276,7 @@ export function Admin() {
                                 )}
                             </DropdownMenuItem>
                             {currentUser?.id !== manager.id && (
-                                <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteUser(manager)}>
+                                <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleRequestDeleteUser(manager)}>
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     {t('common.delete')}
                                 </DropdownMenuItem>
@@ -295,6 +301,27 @@ export function Admin() {
         open={isChangePasswordOpen} 
         onOpenChange={setIsChangePasswordOpen}
         user={selectedUser}
+      />
+
+      <ConfirmDeleteDialog
+        open={!!userToDelete}
+        onOpenChange={(open) => !open && setUserToDelete(null)}
+        title={t('common.confirmDeleteTitle')}
+        description={t('common.confirmDelete', { item: t('admin.userItem') })}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleConfirmDeleteUser}
+      />
+
+      <ConfirmDeleteDialog
+        open={resetConfirmOpen}
+        onOpenChange={setResetConfirmOpen}
+        title={t('admin.confirmResetTitle', 'Reset database')}
+        description={t('admin.confirmReset')}
+        confirmLabel={t('login.resetSystemData')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleConfirmReset}
+        variant="default"
       />
     </div>
   );

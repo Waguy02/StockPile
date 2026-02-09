@@ -106,6 +106,9 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
 
   const [isLoading, setIsLoading] = React.useState(false);
 
+  const hasAtLeastOneProduct = (watchedItems || []).some(
+    (i: any) => i.productId && (parseFloat(String(i.quantity)) || 0) > 0
+  );
 
   const onSubmit = async (data: any) => {
     setIsLoading(true);
@@ -126,6 +129,14 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
              setIsLoading(false);
              return; 
         }
+
+        const validItems = (data.items || []).filter((i: any) => i.productId && (parseFloat(String(i.quantity)) || 0) > 0);
+        if (validItems.length === 0) {
+             toast.error(t('modals.createOrder.errors.atLeastOneProduct'));
+             setIsLoading(false);
+             return;
+        }
+
         const total = parseInt(String(data.totalAmount), 10) || 0;
         const paid = parseInt(String(data.amountPaid), 10) || 0;
         if (paid > total) {
@@ -504,7 +515,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
             />
 
             <DialogFooter>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || !hasAtLeastOneProduct}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {order ? t('modals.createOrder.saveButton') : t('modals.createOrder.createButton')}
               </Button>

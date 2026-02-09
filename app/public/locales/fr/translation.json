@@ -123,8 +123,11 @@
   "admin": {
     "title": "Administration",
     "subtitle": "Configuration système et contrôle d'accès utilisateur.",
+    "userItem": "utilisateur",
     "resetDatabase": "Réinitialiser la base de données",
+    "confirmResetTitle": "Réinitialiser la base de données",
     "confirmReset": "Êtes-vous sûr de vouloir réinitialiser la base de données avec les données par défaut ? Cette action est irréversible.",
+    "resetSuccess": "Base de données réinitialisée avec succès.",
     "addUser": "Ajouter Utilisateur",
     "editUser": "Modifier Utilisateur",
     "addUserDesc": "Créer un nouveau profil utilisateur avec des droits d'accès spécifiques.",
@@ -155,6 +158,8 @@
   "partners": {
     "title": "Partenaires",
     "subtitle": "Gérez vos relations avec les fournisseurs et clients.",
+    "provider": "fournisseur",
+    "customer": "client",
     "providers": "Fournisseurs",
     "customers": "Clients",
     "total": "Total",
@@ -204,6 +209,7 @@
   "procurement": {
     "title": "Approvisionnement",
     "subtitle": "Créez et suivez les bons de commande avec vos fournisseurs.",
+    "purchaseOrder": "bon de commande",
     "createOrder": "Créer Commande",
     "searchPlaceholder": "Rech. par ID Commande, Fournisseur...",
     "filterStatus": "Filtrer Statut",
@@ -229,6 +235,7 @@
   "sales": {
     "title": "Commandes de Vente",
     "subtitle": "Gérez et suivez les commandes clients du brouillon à la finalisation.",
+    "saleItem": "vente",
     "newSale": "Nouvelle Vente",
     "searchPlaceholder": "Rechercher ventes...",
     "filter": "Filtrer",
@@ -387,6 +394,7 @@
         "amountPaidExceedsTotal": "Le montant payé ne peut pas dépasser le montant total",
         "selectPartner": "Veuillez sélectionner un {{type}}",
         "insufficientStock": "Impossible de vendre plus que le stock disponible pour le produit sélectionné",
+        "atLeastOneProduct": "La commande doit contenir au moins un produit avec une quantité supérieure à zéro.",
         "stockCreation": "Échec de la création de stock pour un article",
         "saveFailed": "Échec de l'enregistrement de la commande : {{error}}"
       },
@@ -409,7 +417,8 @@
     "cancel": "Annuler",
     "delete": "Supprimer",
     "deleteCompleted": "Impossible de supprimer une commande terminée",
-    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet(te) {{item}} ?",
+    "confirmDeleteTitle": "Confirmer la suppression",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet(te) {{item}} ? Cette action est irréversible.",
     "unknown": "Inconnu",
     "allOptions": "Tous",
     "error": "Une erreur est survenue"

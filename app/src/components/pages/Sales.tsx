@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
 import CreateOrderDialog from '../modals/CreateOrderDialog';
+import { ConfirmDeleteDialog } from '../common/ConfirmDeleteDialog';
 import { api } from '../../lib/api';
 import { formatCurrency, formatDateForDisplay } from '../../lib/formatters';
 import {
@@ -44,6 +45,7 @@ export function Sales() {
   const { t } = useTranslation();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<any>(null);
+  const [saleToDelete, setSaleToDelete] = useState<any>(null);
   
   // Filters state
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,15 +76,19 @@ export function Sales() {
     setIsCreateOpen(true);
   };
 
-  const handleDeleteSale = async (sale: any) => {
+  const handleRequestDeleteSale = (sale: any) => {
     if (sale.status === 'completed') {
-        alert(t('common.deleteCompleted'));
-        return;
+      alert(t('common.deleteCompleted'));
+      return;
     }
-    if (confirm(t('common.confirmDelete', { item: 'sale' }))) {
-        await api.deleteSale(sale.id);
-        await refresh();
-    }
+    setSaleToDelete(sale);
+  };
+
+  const handleConfirmDeleteSale = async () => {
+    if (!saleToDelete) return;
+    await api.deleteSale(saleToDelete.id);
+    await refresh();
+    setSaleToDelete(null);
   };
 
   const handleCloseDialog = (open: boolean) => {
@@ -181,6 +187,16 @@ export function Sales() {
         onOpenChange={handleCloseDialog} 
         type="sale" 
         order={editingSale}
+      />
+
+      <ConfirmDeleteDialog
+        open={!!saleToDelete}
+        onOpenChange={(open) => !open && setSaleToDelete(null)}
+        title={t('common.confirmDeleteTitle')}
+        description={t('common.confirmDelete', { item: t('sales.saleItem') })}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleConfirmDeleteSale}
       />
 
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden">
@@ -364,7 +380,7 @@ export function Sales() {
                                       {t('common.edit')}
                                   </DropdownMenuItem>
                                   {currentUser?.role === 'manager' && (
-                                  <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleDeleteSale(sale)}>
+                                  <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleRequestDeleteSale(sale)}>
                                       <Trash2 className="w-4 h-4 mr-2" />
                                       {t('common.delete')}
                                   </DropdownMenuItem>
@@ -421,7 +437,7 @@ export function Sales() {
                             {t('common.edit')}
                           </DropdownMenuItem>
                           {currentUser?.role === 'manager' && (
-                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer py-3 text-sm" onClick={() => handleDeleteSale(sale)}>
+                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer py-3 text-sm" onClick={() => handleRequestDeleteSale(sale)}>
                             <Trash2 className="w-4 h-4 mr-3" />
                             {t('common.delete')}
                           </DropdownMenuItem>

@@ -6,7 +6,6 @@ import {
   Settings, 
   Truck, 
   LogOut,
-  Search,
   Menu,
   ChevronRight,
   Sparkles,
@@ -177,16 +176,6 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
                 >
                   EN
                 </button>
-              </div>
-
-              {/* Search (Desktop Only) */}
-              <div className="relative hidden md:block w-64 group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                <input 
-                    type="text" 
-                    placeholder={t('shell.search')} 
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-100/50 dark:bg-slate-800/50 border border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-200 dark:focus:border-indigo-800 rounded-full text-sm outline-none ring-0 focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-indigo-500/20 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-all duration-300"
-                />
               </div>
 
           </div>
