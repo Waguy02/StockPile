@@ -77,6 +77,21 @@
         "last5Years": "Last 5 years"
     },
     "downloadReport": "Download Report",
+    "report": "Report",
+    "reportTitle": "Report",
+    "reportGenerated": "Generated",
+    "reportTimeRange": "Time range",
+    "reportKeyMetrics": "Key metrics",
+    "reportMetric": "Metric",
+    "reportValue": "Value",
+    "totalStockItems": "Total stock items",
+    "totalRevenueSelectedPeriod": "Total revenue (selected period)",
+    "reportProduct": "Product",
+    "reportQuantitySold": "Quantity sold",
+    "reportCategory": "Category",
+    "reportQuantity": "Quantity",
+    "reportPeriodRange": "Period: {{start}} to {{end}}",
+    "reportDoneOn": "Done on",
     "actionNeeded": "Action needed",
     "arriving": "{{count}} arriving",
     "activity": {
@@ -297,6 +312,13 @@
       "quantity": "Quantity"
     },
     "units": "units",
+    "exportReport": "Export Report",
+    "reportTitle": "Stock Inventory Report",
+    "reportProductName": "Product",
+    "reportCategory": "Category",
+    "reportBasePrice": "Base Price",
+    "reportStock": "Stock",
+    "reportStockValue": "Stock Value",
     "includeOutOfStock": "Include out-of-stock products",
     "deleteProductTitle": "Delete product from catalogue",
     "deleteProductDescription": "« {{name}} » will be permanently removed from the catalogue. This action cannot be undone.",
@@ -418,6 +440,8 @@
   },
   "invoice": {
     "title": "Invoice",
+    "titleSale": "Sale invoice",
+    "titlePurchase": "Purchase invoice",
     "natureSale": "Sale of products",
     "naturePurchase": "Purchase of stock",
     "reference": "Reference",
@@ -431,7 +455,8 @@
     "total": "Total",
     "amountPaid": "Amount paid",
     "remaining": "Remaining due",
-    "button": "Invoice"
+    "button": "Invoice",
+    "downloadError": "Could not download invoice"
   },
   "common": {
     "edit": "Edit",

@@ -21,6 +21,7 @@ import { useConnection } from '../../lib/ConnectionContext';
 import CreateOrderDialog from '../modals/CreateOrderDialog';
 import { ConfirmDeleteDialog } from '../common/ConfirmDeleteDialog';
 import { api } from '../../lib/api';
+import { toast } from 'sonner';
 import { formatCurrency, formatDateForDisplay } from '../../lib/formatters';
 import { generateSaleInvoicePdf } from '../../lib/invoicePdf';
 import {
@@ -107,23 +108,29 @@ export function Sales() {
   };
 
   const handleGenerateInvoice = async (sale: any) => {
-    const invoiceI18n = {
-      title: t('invoice.title'),
-      natureSale: t('invoice.natureSale'),
-      naturePurchase: t('invoice.naturePurchase'),
-      reference: t('invoice.reference'),
-      date: t('invoice.date'),
-      client: t('invoice.client'),
-      provider: t('invoice.provider'),
-      product: t('invoice.product'),
-      quantity: t('invoice.quantity'),
-      unitPrice: t('invoice.unitPrice'),
-      lineTotal: t('invoice.lineTotal'),
-      total: t('invoice.total'),
-      amountPaid: t('invoice.amountPaid'),
-      remaining: t('invoice.remaining'),
-    };
-    await generateSaleInvoicePdf(sale, invoiceI18n, getCustomerName, getProductName);
+    try {
+      const invoiceI18n = {
+        title: t('invoice.title'),
+        titleSale: t('invoice.titleSale'),
+        titlePurchase: t('invoice.titlePurchase'),
+        natureSale: t('invoice.natureSale'),
+        naturePurchase: t('invoice.naturePurchase'),
+        reference: t('invoice.reference'),
+        date: t('invoice.date'),
+        client: t('invoice.client'),
+        provider: t('invoice.provider'),
+        product: t('invoice.product'),
+        quantity: t('invoice.quantity'),
+        unitPrice: t('invoice.unitPrice'),
+        lineTotal: t('invoice.lineTotal'),
+        total: t('invoice.total'),
+        amountPaid: t('invoice.amountPaid'),
+        remaining: t('invoice.remaining'),
+      };
+      await generateSaleInvoicePdf(sale, invoiceI18n, getCustomerName, getProductName);
+    } catch (err) {
+      toast.error(t('invoice.downloadError'), { description: err instanceof Error ? err.message : undefined });
+    }
   };
 
   const clearFilters = () => {

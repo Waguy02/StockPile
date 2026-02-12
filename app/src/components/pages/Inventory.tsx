@@ -11,14 +11,21 @@ import {
   ListFilter,
   Edit,
   Trash2,
-  Calendar
+  Calendar,
+  Download,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useStore } from '../../lib/StoreContext';
 import { useConnection } from '../../lib/ConnectionContext';
 import { AddProductDialog } from '../modals/AddProductDialog';
 import { CategoriesDialog } from '../modals/CategoriesDialog';
 import { api } from '../../lib/api';
 import { formatCurrency, formatDateForDisplay } from '../../lib/formatters';
+import { savePdf } from '../../lib/downloadPdf';
+import { loadLogoWithTextDataUrl, drawPdfHeader } from '../../lib/pdfReportHeader';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,7 +61,7 @@ import { Switch } from '../ui/switch';
 export function Inventory() {
   const { products, categories, stockBatches, isLoading, refresh, currentUser } = useStore();
   const { isOnline } = useConnection();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState<'products' | 'batches'>('products');
 
   // If staff, force active tab to products
@@ -119,6 +126,98 @@ export function Inventory() {
     [products, stockBatches]
   );
 
+  const handleExportInventoryReport = async () => {
+    const doc = new jsPDF();
+    const now = new Date();
+    const dateLocale = i18n.language?.startsWith('fr') ? 'fr-FR' : 'en-GB';
+    const pageW = doc.internal.pageSize.getWidth();
+    const margin = 18;
+
+    const logoDataUrl = await loadLogoWithTextDataUrl();
+    let y = drawPdfHeader(doc, logoDataUrl);
+
+    // Title
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text(t('inventory.reportTitle'), pageW / 2, y, { align: 'center' });
+    y += 8;
+
+    // Date
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.text(now.toLocaleDateString(dateLocale, { dateStyle: 'long' }), pageW / 2, y, { align: 'center' });
+    y += 12;
+
+    // Build rows: only non-depleted products (stock > 0)
+    const getCategoryName = (id: string) => categories.find(c => c.id === id)?.name || t('common.unknown');
+    const rows: string[][] = [];
+    let reportTotal = 0;
+
+    products.forEach((p) => {
+      const qty = stockBatches.filter(b => b.productId === p.id).reduce((s, b) => s + b.quantity, 0);
+      if (qty <= 0) return; // skip depleted products
+      const lineValue = qty * p.baseUnitPrice;
+      reportTotal += lineValue;
+      rows.push([
+        p.name,
+        getCategoryName(p.categoryId),
+        formatCurrency(p.baseUnitPrice),
+        String(qty),
+        formatCurrency(lineValue),
+      ]);
+    });
+
+    // Products table
+    autoTable(doc, {
+      startY: y,
+      head: [[
+        t('inventory.reportProductName'),
+        t('inventory.reportCategory'),
+        t('inventory.reportBasePrice'),
+        t('inventory.reportStock'),
+        t('inventory.reportStockValue'),
+      ]],
+      body: rows,
+      theme: 'striped',
+      headStyles: { fillColor: [79, 70, 229], fontStyle: 'bold' },
+      margin: { left: margin, right: margin },
+      columnStyles: {
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+      },
+      tableLineWidth: 0.1,
+      tableLineColor: [200, 200, 200],
+    });
+
+    // @ts-ignore
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    // Total stock value summary
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageW - margin, y);
+    y += 8;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text(`${t('inventory.totalStockValue')} :`, margin, y);
+    doc.text(formatCurrency(reportTotal), pageW - margin, y, { align: 'right' });
+
+    // Footer "Fait le"
+    const pageH = doc.internal.pageSize.getHeight();
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(120, 120, 120);
+    const doneOnText = `${t('dashboard.reportDoneOn')} ${now.toLocaleString(dateLocale, { dateStyle: 'medium', timeStyle: 'short' })}`;
+    doc.text(doneOnText, pageW / 2, pageH - 10, { align: 'center' });
+
+    const dateStr = now.toISOString().split('T')[0];
+    await savePdf(doc, `odicam_rapport_inventaire_${dateStr}.pdf`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
@@ -135,7 +234,16 @@ export function Inventory() {
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm font-medium">{t('inventory.subtitle')}</p>
         </div>
         {currentUser?.role !== 'staff' && (
-          <div className="flex space-x-3">
+          <div className="flex flex-wrap gap-3">
+            {isManager && (
+              <button
+                onClick={handleExportInventoryReport}
+                className="flex items-center px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 font-medium text-sm transition-all shadow-sm"
+              >
+                <Download className="w-4 h-4 mr-2 text-slate-500 dark:text-slate-400 shrink-0" />
+                {t('inventory.exportReport')}
+              </button>
+            )}
             <button 
               onClick={() => setIsCategoriesOpen(true)}
               disabled={!isOnline}
@@ -325,14 +433,7 @@ export function Inventory() {
           )}
         </div>
         
-        {/* Pagination */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
-          <span className="font-medium">{t('inventory.showing', { count: activeTab === 'products' ? products.length : stockBatches.length })}</span>
-          <div className="flex space-x-2">
-            <button className="px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors" disabled>{t('inventory.previous')}</button>
-            <button className="px-4 py-2 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors">{t('inventory.next')}</button>
-          </div>
-        </div>
+        {/* Pagination is rendered inside each table component */}
       </div>
 
       <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
@@ -363,18 +464,32 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
   const { t } = useTranslation();
   const showActions = !readOnly && currentUser?.role !== 'staff';
   const canDelete = !!onDelete;
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
 
   const getTotalStock = (productId: string) =>
     stockBatches.filter(b => b.productId === productId).reduce((sum, b) => sum + b.quantity, 0);
   
-  const filteredProducts = products.filter(p => {
+  const filteredProducts = React.useMemo(() => products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
         (p.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filters.categoryId === 'all' || p.categoryId === filters.categoryId;
     const totalStock = getTotalStock(p.id);
     const matchesStock = includeOutOfStock || totalStock > 0;
     return matchesSearch && matchesCategory && matchesStock;
-  });
+  }), [products, stockBatches, searchTerm, filters, includeOutOfStock]);
+
+  // Reset page when filters change
+  React.useEffect(() => { setPage(1); }, [searchTerm, filters.categoryId, includeOutOfStock]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedProducts = React.useMemo(
+    () => filteredProducts.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [filteredProducts, safePage]
+  );
+
+  React.useEffect(() => { if (page > totalPages) setPage(totalPages); }, [totalPages, page]);
 
   const getCategoryName = (id: string) => categories.find(c => c.id === id)?.name || t('common.unknown');
 
@@ -402,7 +517,7 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-          {filteredProducts.map((product) => {
+          {paginatedProducts.map((product) => {
             const totalStock = getTotalStock(product.id);
             const lineStockValue = totalStock * product.baseUnitPrice;
 
@@ -457,7 +572,7 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
 
     {/* Mobile List View */}
     <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-      {filteredProducts.map((product) => {
+      {paginatedProducts.map((product) => {
         const totalStock = stockBatches
           .filter(b => b.productId === product.id)
           .reduce((sum, b) => sum + b.quantity, 0);
@@ -518,6 +633,42 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
         );
       })}
     </div>
+
+    {/* Pagination */}
+    {filteredProducts.length > 0 && (
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          {t('activity.paginationShowing', {
+            from: (safePage - 1) * PAGE_SIZE + 1,
+            to: Math.min(safePage * PAGE_SIZE, filteredProducts.length),
+            total: filteredProducts.length,
+          })}
+        </p>
+        <nav className="flex items-center gap-2" aria-label={t('activity.paginationPage', { current: safePage, total: totalPages })}>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={safePage <= 1}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            {t('inventory.previous')}
+          </button>
+          <span className="px-3 py-2 min-h-[44px] flex items-center text-sm font-medium text-slate-600 dark:text-slate-400">
+            {t('activity.paginationPage', { current: safePage, total: totalPages })}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={safePage >= totalPages}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+          >
+            {t('inventory.next')}
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </nav>
+      </div>
+    )}
     </>
   );
 }
@@ -525,8 +676,10 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
 function BatchesTable({ searchTerm, filters }: { searchTerm: string, filters: any }) {
   const { stockBatches, products } = useStore();
   const { t } = useTranslation();
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
   
-  const filteredBatches = stockBatches.filter(b => {
+  const filteredBatches = React.useMemo(() => stockBatches.filter(b => {
     const matchesSearch = b.batchLabel.toLowerCase().includes(searchTerm.toLowerCase());
     
     const batchDate = new Date(b.entryDate);
@@ -535,7 +688,19 @@ function BatchesTable({ searchTerm, filters }: { searchTerm: string, filters: an
         (!filters.endDate || batchDate <= new Date(filters.endDate + 'T23:59:59.999Z'));
 
     return matchesSearch && matchesDate;
-  });
+  }), [stockBatches, searchTerm, filters]);
+
+  // Reset page when filters change
+  React.useEffect(() => { setPage(1); }, [searchTerm, filters.startDate, filters.endDate]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredBatches.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedBatches = React.useMemo(
+    () => filteredBatches.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [filteredBatches, safePage]
+  );
+
+  React.useEffect(() => { if (page > totalPages) setPage(totalPages); }, [totalPages, page]);
 
   const getProductName = (id: string) => products.find(p => p.id === id)?.name || t('common.unknown');
 
@@ -562,7 +727,7 @@ function BatchesTable({ searchTerm, filters }: { searchTerm: string, filters: an
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-          {filteredBatches.map((batch) => (
+          {paginatedBatches.map((batch) => (
             <tr key={batch.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
               <td className="px-6 py-4">
                   <span className="font-mono text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-2.5 py-1 rounded border border-indigo-100 dark:border-indigo-900/30">
@@ -590,7 +755,7 @@ function BatchesTable({ searchTerm, filters }: { searchTerm: string, filters: an
 
     {/* Mobile Batches List */}
     <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-      {filteredBatches.map((batch) => (
+      {paginatedBatches.map((batch) => (
         <div key={batch.id} className="p-4 space-y-3">
            <div className="flex justify-between items-start">
              <div>
@@ -622,6 +787,42 @@ function BatchesTable({ searchTerm, filters }: { searchTerm: string, filters: an
         </div>
       ))}
     </div>
+
+    {/* Pagination */}
+    {filteredBatches.length > 0 && (
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          {t('activity.paginationShowing', {
+            from: (safePage - 1) * PAGE_SIZE + 1,
+            to: Math.min(safePage * PAGE_SIZE, filteredBatches.length),
+            total: filteredBatches.length,
+          })}
+        </p>
+        <nav className="flex items-center gap-2" aria-label={t('activity.paginationPage', { current: safePage, total: totalPages })}>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={safePage <= 1}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            {t('inventory.previous')}
+          </button>
+          <span className="px-3 py-2 min-h-[44px] flex items-center text-sm font-medium text-slate-600 dark:text-slate-400">
+            {t('activity.paginationPage', { current: safePage, total: totalPages })}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={safePage >= totalPages}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+          >
+            {t('inventory.next')}
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </nav>
+      </div>
+    )}
     </>
   );
 }

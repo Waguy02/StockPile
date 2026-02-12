@@ -112,8 +112,8 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-        {/* Header - always dark to match sidebar, logo visible */}
-        <header className="h-20 bg-[#0B1121] backdrop-blur-xl border-b border-slate-800/50 flex items-center justify-between px-4 md:px-10 z-10 sticky top-0">
+        {/* Header - always dark on mobile; follows theme on desktop */}
+        <header className="h-20 bg-[#0B1121] md:bg-white md:dark:bg-slate-900 backdrop-blur-xl border-b border-slate-800/50 md:border-slate-200 md:dark:border-slate-800/50 flex items-center justify-between px-4 md:px-10 z-10 sticky top-0">
           <div className="flex items-center gap-3 min-w-0">
              {/* Mobile Menu Button */}
             <button 
@@ -126,17 +126,17 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
              {/* Logo with text (mobile) / Breadcrumbs (Desktop) */}
             <div className="flex items-center min-w-0">
                 <img src="/odicam_logo.png" alt="Odicam" className="md:hidden h-10 w-auto object-contain object-left" />
-                <div className="hidden md:flex items-center gap-2 text-sm text-slate-400">
-                    <span onClick={() => currentView === 'activity' && onNavigate('dashboard')} className={`${currentView === 'activity' ? 'cursor-pointer hover:text-white' : ''} transition-colors`}>{t('shell.app')}</span>
-                    <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
+                <div className="hidden md:flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                    <span onClick={() => currentView === 'activity' && onNavigate('dashboard')} className={`${currentView === 'activity' ? 'cursor-pointer hover:text-slate-900 dark:hover:text-white' : ''} transition-colors`}>{t('shell.app')}</span>
+                    <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
                     {currentView === 'activity' ? (
                       <>
-                        <span onClick={() => onNavigate('dashboard')} className="cursor-pointer hover:text-white transition-colors">{t('nav.dashboard')}</span>
-                        <ChevronRight className="w-4 h-4 text-slate-500 shrink-0" />
-                        <span className="font-medium text-white">{t('nav.activity')}</span>
+                        <span onClick={() => onNavigate('dashboard')} className="cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors">{t('nav.dashboard')}</span>
+                        <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                        <span className="font-medium text-slate-900 dark:text-white">{t('nav.activity')}</span>
                       </>
                     ) : (
-                      <span className="font-medium text-white capitalize">{t(`nav.${currentView}`)}</span>
+                      <span className="font-medium text-slate-900 dark:text-white capitalize">{t(`nav.${currentView}`)}</span>
                     )}
                 </div>
             </div>
@@ -151,22 +151,22 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
               {/* Theme Toggle */}
               <button 
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="p-2 text-slate-400 hover:text-indigo-400 hover:bg-white/5 rounded-full transition-all duration-200"
+                className="p-2 text-slate-400 md:text-slate-600 md:dark:text-slate-400 hover:text-indigo-400 hover:bg-white/5 md:hover:bg-slate-100 md:dark:hover:bg-white/5 rounded-full transition-all duration-200"
               >
                 {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
 
               {/* Language Selector */}
-              <div className="flex items-center gap-1 bg-white/5 rounded-full p-1 border border-slate-700/60">
+              <div className="flex items-center gap-1 bg-white/5 md:bg-slate-100 md:dark:bg-white/5 rounded-full p-1 border border-slate-700/60 md:border-slate-200 md:dark:border-slate-700/60">
                 <button 
                   onClick={() => changeLanguage('fr')}
-                  className={`px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium transition-all ${i18n.language === 'fr' ? 'bg-white/20 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium transition-all ${i18n.language === 'fr' ? 'bg-white/20 md:bg-white md:dark:bg-white/20 text-white md:text-slate-900 md:dark:text-white shadow-sm' : 'text-slate-400 md:text-slate-500 md:dark:text-slate-400 hover:text-white md:hover:text-slate-900 md:dark:hover:text-white'}`}
                 >
                   FR
                 </button>
                 <button 
                   onClick={() => changeLanguage('en')}
-                  className={`px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium transition-all ${i18n.language === 'en' ? 'bg-white/20 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium transition-all ${i18n.language === 'en' ? 'bg-white/20 md:bg-white md:dark:bg-white/20 text-white md:text-slate-900 md:dark:text-white shadow-sm' : 'text-slate-400 md:text-slate-500 md:dark:text-slate-400 hover:text-white md:hover:text-slate-900 md:dark:hover:text-white'}`}
                 >
                   EN
                 </button>

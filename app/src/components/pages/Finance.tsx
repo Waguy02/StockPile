@@ -14,6 +14,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useStore } from '../../lib/StoreContext';
 import { formatCurrency, formatDateForDisplay } from '../../lib/formatters';
+import { savePdf } from '../../lib/downloadPdf';
+import { loadLogoWithTextDataUrl, drawPdfHeader } from '../../lib/pdfReportHeader';
 import {
   Select,
   SelectContent,
@@ -108,28 +110,42 @@ export function Finance() {
     [products, stockBatches]
   );
 
-  const handleDownloadReport = () => {
+  const handleDownloadReport = async () => {
     const doc = new jsPDF();
     const now = new Date();
-    const generatedDate = now.toLocaleString(dateLocale, { dateStyle: 'medium', timeStyle: 'short' });
-    const periodEndDate = now.toLocaleDateString(dateLocale, { dateStyle: 'long' });
-    const periodLabel = `${getTimeRangeLabel(timeRange)}${t('finance.reportPeriodThrough', { date: periodEndDate })}`;
-
+    const pageW = doc.internal.pageSize.getWidth();
     const margin = 18;
-    let y = margin + 4;
 
-    // Title (app name: Odicam)
-    doc.setFontSize(22);
+    // Period bounds (same logic as filter)
+    const endDate = new Date();
+    const startDate = new Date();
+    if (timeRange === 'all') startDate.setFullYear(endDate.getFullYear() - 10);
+    else if (timeRange === 'last24Hours') startDate.setTime(endDate.getTime() - 24 * 60 * 60 * 1000);
+    else if (timeRange === 'last7Days') startDate.setDate(endDate.getDate() - 7);
+    else if (timeRange === 'last30Days') startDate.setDate(endDate.getDate() - 30);
+    else if (timeRange === 'lastTrimester') startDate.setMonth(endDate.getMonth() - 3);
+    else if (timeRange === 'lastYear') startDate.setFullYear(endDate.getFullYear() - 1);
+    const fmt = (d: Date) => {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    };
+    const periodText = t('dashboard.reportPeriodRange', { start: fmt(startDate), end: fmt(endDate) });
+
+    const logoDataUrl = await loadLogoWithTextDataUrl();
+    let y = drawPdfHeader(doc, logoDataUrl);
+
+    // Centered H1 title
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text(t('finance.reportTitle'), margin, y);
-    y += 10;
+    doc.text(t('finance.reportTitle'), pageW / 2, y, { align: 'center' });
+    y += 8;
 
-    // Metadata (internationalized, period includes right boundary = current date)
-    doc.setFontSize(10);
+    // Period centered, larger font
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${t('finance.reportGenerated')}: ${generatedDate}`, margin, y);
-    y += 6;
-    doc.text(`${t('finance.reportTimeRange')}: ${periodLabel}`, margin, y);
+    doc.text(periodText, pageW / 2, y, { align: 'center' });
     y += 12;
 
     // Financial summary (internationalized)
@@ -144,7 +160,8 @@ export function Finance() {
         body: [
             [t('finance.totalRevenue'), formatCurrency(totalInflow)],
             [t('finance.totalExpenses'), formatCurrency(totalOutflow)],
-            [t('finance.netFlow'), formatCurrency(totalInflow - totalOutflow)]
+            [t('finance.netFlow'), formatCurrency(totalInflow - totalOutflow)],
+            [t('finance.totalStockValue'), formatCurrency(totalStockValue)]
         ],
         theme: 'striped',
         headStyles: { fillColor: [79, 70, 229], fontStyle: 'bold' },
@@ -179,8 +196,16 @@ export function Finance() {
         tableLineColor: [200, 200, 200]
     });
 
+    // "Fait le" / "Done on" at bottom (larger font)
+    const pageH = doc.internal.pageSize.getHeight();
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(120, 120, 120);
+    const doneOnText = `${t('dashboard.reportDoneOn')} ${now.toLocaleString(dateLocale, { dateStyle: 'medium', timeStyle: 'short' })}`;
+    doc.text(doneOnText, pageW / 2, pageH - 10, { align: 'center' });
+
     const dateStr = now.toISOString().split('T')[0];
-    doc.save(`odicam_rapport_financier_${dateStr}.pdf`);
+    await savePdf(doc, `odicam_report_financier_${dateStr}.pdf`);
   };
 
   if (isLoading) {

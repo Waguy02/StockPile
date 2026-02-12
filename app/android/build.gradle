@@ -1,7 +1,6 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    
     repositories {
         google()
         mavenCentral()
@@ -9,7 +8,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:8.7.2'
         classpath 'com.google.gms:google-services:4.4.2'
-
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24'
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }
@@ -22,11 +21,20 @@ allprojects {
         google()
         mavenCentral()
     }
-    // Force Java 17 for all modules (including Capacitor) so build works with JDK 17 or 21
+    // Force Java 17 / Kotlin JVM 17 for all modules (including Capacitor plugins) so build works with JDK 17 or 21
     afterEvaluate { proj ->
         proj.tasks.withType(JavaCompile).configureEach {
             sourceCompatibility = JavaVersion.VERSION_17
             targetCompatibility = JavaVersion.VERSION_17
+        }
+        // Override Android compileOptions (Capacitor plugins may set Java 21)
+        if (proj.plugins.hasPlugin('com.android.application') || proj.plugins.hasPlugin('com.android.library')) {
+            proj.android.compileOptions.sourceCompatibility = JavaVersion.VERSION_17
+            proj.android.compileOptions.targetCompatibility = JavaVersion.VERSION_17
+        }
+        // Force Kotlin JVM target 17 (e.g. capacitor-filesystem) to match Java 17
+        proj.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions { jvmTarget = "17" }
         }
     }
 }

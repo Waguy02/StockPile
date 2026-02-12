@@ -77,6 +77,21 @@
         "last5Years": "Les 5 dernières années"
     },
     "downloadReport": "Télécharger Rapport",
+    "report": "Rapport",
+    "reportTitle": "Rapport",
+    "reportGenerated": "Généré",
+    "reportTimeRange": "Période",
+    "reportKeyMetrics": "Indicateurs clés",
+    "reportMetric": "Indicateur",
+    "reportValue": "Valeur",
+    "totalStockItems": "Articles en stock (total)",
+    "totalRevenueSelectedPeriod": "Revenu total (période)",
+    "reportProduct": "Produit",
+    "reportQuantitySold": "Quantité vendue",
+    "reportCategory": "Catégorie",
+    "reportQuantity": "Quantité",
+    "reportPeriodRange": "Période : {{start}} au {{end}}",
+    "reportDoneOn": "Fait le",
     "actionNeeded": "Action requise",
     "arriving": "{{count}} en arrivée",
     "activity": {
@@ -305,6 +320,13 @@
       "quantity": "Quantité"
     },
     "units": "unités",
+    "exportReport": "Exporter Rapport",
+    "reportTitle": "Rapport d'inventaire des stocks",
+    "reportProductName": "Produit",
+    "reportCategory": "Catégorie",
+    "reportBasePrice": "Prix de base",
+    "reportStock": "Stock",
+    "reportStockValue": "Valeur stock",
     "includeOutOfStock": "Inclure les produits épuisés",
     "deleteProductTitle": "Supprimer le produit du catalogue",
     "deleteProductDescription": "« {{name}} » sera définitivement retiré du catalogue. Cette action est irréversible.",
@@ -426,6 +448,8 @@
   },
   "invoice": {
     "title": "Facture",
+    "titleSale": "Facture de vente",
+    "titlePurchase": "Facture d'achat",
     "natureSale": "Vente de produits",
     "naturePurchase": "Achat de stocks",
     "reference": "Référence",
@@ -439,7 +463,8 @@
     "total": "Total",
     "amountPaid": "Montant payé",
     "remaining": "Restant à payer",
-    "button": "Facture"
+    "button": "Facture",
+    "downloadError": "Impossible de télécharger la facture"
   },
   "common": {
     "edit": "Modifier",

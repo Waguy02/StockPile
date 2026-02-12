@@ -21,8 +21,11 @@ import {
 } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Capacitor } from '@capacitor/core';
 import { useStore } from '../../lib/StoreContext';
 import { formatCurrency, formatDateForDisplay } from '../../lib/formatters';
+import { savePdf } from '../../lib/downloadPdf';
+import { loadLogoWithTextDataUrl, drawPdfHeader } from '../../lib/pdfReportHeader';
 import { ViewState } from '../../lib/data';
 import {
   Select,
@@ -293,71 +296,94 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
     [products, relevantBatches]
   );
 
-  const handleDownloadReport = () => {
+  const handleDownloadReport = async () => {
     const doc = new jsPDF();
-    
-    // Title
-    doc.setFontSize(20);
-    doc.text('StockPILE Report', 14, 22);
-    
-    // Metadata
-    doc.setFontSize(10);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
-    doc.text(`Time Range: ${t(`dashboard.filter.${timeRange}`)}`, 14, 35);
-    
-    let currentY = 45;
+    const margin = 10;
+    const pageW = doc.internal.pageSize.getWidth();
+    const logoDataUrl = await loadLogoWithTextDataUrl();
+    let currentY = drawPdfHeader(doc, logoDataUrl);
+
+    // Period bounds (same logic as getFilteredSales)
+    const endDate = new Date();
+    const startDate = new Date();
+    if (timeRange === 'last24Hours') startDate.setTime(endDate.getTime() - 24 * 60 * 60 * 1000);
+    else if (timeRange === 'last7Days') startDate.setDate(endDate.getDate() - 7);
+    else if (timeRange === 'last30Days') startDate.setDate(endDate.getDate() - 30);
+    else if (timeRange === 'lastTrimester') startDate.setMonth(endDate.getMonth() - 3);
+    else if (timeRange === 'lastYear') startDate.setFullYear(endDate.getFullYear() - 1);
+    const fmt = (d: Date) => {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    };
+    const periodText = t('dashboard.reportPeriodRange', { start: fmt(startDate), end: fmt(endDate) });
+
+    // Period as H1, centered
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(periodText, pageW / 2, currentY, { align: 'center' });
+    currentY += 12;
 
     // Section 1: Key Metrics
     doc.setFontSize(14);
-    doc.text('Key Metrics', 14, currentY);
+    doc.setFont('helvetica', 'bold');
+    doc.text(t('dashboard.reportKeyMetrics'), margin, currentY);
     currentY += 5;
     
     autoTable(doc, {
         startY: currentY,
-        head: [['Metric', 'Value']],
+        head: [[t('dashboard.reportMetric'), t('dashboard.reportValue')]],
         body: [
-            ['Total Stock Items', totalStockCount],
-            ['Total Revenue (Selected Period)', formatCurrency(filteredSalesRevenue)],
-            ['Low Stock Batches', lowStockItems],
-            ['Pending Orders', pendingOrders]
+            [t('dashboard.totalStockItems'), String(totalStockCount)],
+            [t('dashboard.totalRevenueSelectedPeriod'), formatCurrency(filteredSalesRevenue)],
+            [t('dashboard.lowStock'), String(lowStockItems)],
+            [t('dashboard.pendingOrders'), String(pendingOrders)]
         ],
         theme: 'striped',
-        headStyles: { fillColor: [79, 70, 229] } // Indigo 600
+        headStyles: { fillColor: [79, 70, 229] }
     });
     
-    // @ts-ignore - jspdf-autotable adds lastAutoTable to the doc instance
     currentY = (doc as any).lastAutoTable.finalY + 15;
 
     // Section 2: Top Selling Products
     doc.setFontSize(14);
-    doc.text('Top Selling Products', 14, currentY);
+    doc.text(t('dashboard.topSellingProducts'), margin, currentY);
     currentY += 5;
 
     autoTable(doc, {
         startY: currentY,
-        head: [['Product', 'Quantity Sold']],
+        head: [[t('dashboard.reportProduct'), t('dashboard.reportQuantitySold')]],
         body: topSellingData.map(item => [item.name, item.quantity]),
         theme: 'striped',
-        headStyles: { fillColor: [16, 185, 129] } // Emerald 500
+        headStyles: { fillColor: [16, 185, 129] }
     });
 
-    // @ts-ignore
     currentY = (doc as any).lastAutoTable.finalY + 15;
 
     // Section 3: Stock by Category
     doc.setFontSize(14);
-    doc.text('Stock by Category', 14, currentY);
+    doc.text(t('dashboard.stockByCategory'), margin, currentY);
     currentY += 5;
 
     autoTable(doc, {
         startY: currentY,
-        head: [['Category', 'Quantity']],
+        head: [[t('dashboard.reportCategory'), t('dashboard.reportQuantity')]],
         body: stockByCategoryData.map(item => [item.name, item.value]),
         theme: 'striped',
-        headStyles: { fillColor: [139, 92, 246] } // Violet 500
+        headStyles: { fillColor: [139, 92, 246] }
     });
 
-    doc.save(`stockpile_report_${new Date().toISOString().split('T')[0]}.pdf`);
+    // "Fait le" / "Done on" at bottom (larger font)
+    currentY = (doc as any).lastAutoTable.finalY + 14;
+    const pageH = doc.internal.pageSize.getHeight();
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(120, 120, 120);
+    const doneOnText = `${t('dashboard.reportDoneOn')} ${new Date().toLocaleString()}`;
+    doc.text(doneOnText, pageW / 2, pageH - 10, { align: 'center' });
+
+    await savePdf(doc, `odicam_report_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   return (
@@ -385,7 +411,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
                 className="flex items-center justify-center gap-2 h-10 px-4 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 dark:shadow-indigo-900/30 transition-colors whitespace-nowrap"
             >
                 <Download className="w-4 h-4 shrink-0" />
-                {t('dashboard.downloadReport')}
+                {Capacitor.getPlatform() !== 'web' ? t('dashboard.report') : t('dashboard.downloadReport')}
             </button>
         </div>
       </div>
@@ -809,9 +835,9 @@ function StatCard({ title, value, secondaryValue, subtitle, icon: Icon, trend, t
   return (
     <div 
       onClick={onClick}
-      className={`bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] hover:shadow-lg transition-all duration-300 group ${onClick ? 'cursor-pointer hover:-translate-y-1' : ''}`}
+      className={`flex flex-col h-full min-h-[180px] bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] hover:shadow-lg transition-all duration-300 group ${onClick ? 'cursor-pointer hover:-translate-y-1' : ''}`}
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between flex-1 min-h-0">
         <div>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
           <h3 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mt-2 tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{value}</h3>
@@ -819,11 +845,11 @@ function StatCard({ title, value, secondaryValue, subtitle, icon: Icon, trend, t
             <p className="text-xl font-semibold text-slate-600 dark:text-slate-300 mt-1.5 tabular-nums">{secondaryValue}</p>
           )}
         </div>
-        <div className={`p-3.5 rounded-xl ${s.light} group-hover:scale-110 transition-transform duration-300`}>
+        <div className={`p-3.5 rounded-xl ${s.light} group-hover:scale-110 transition-transform duration-300 shrink-0`}>
           <Icon className={`w-6 h-6 ${s.text}`} />
         </div>
       </div>
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-4 flex items-center justify-between shrink-0">
          <div className={`flex items-center text-xs font-bold px-2 py-1 rounded-full ${trendUp ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'}`}>
              {trendUp ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <ArrowDownRight className="w-3 h-3 mr-1" />}
              {trend}
