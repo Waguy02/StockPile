@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { 
   Plus, 
   Search, 
-  Filter, 
+  Filter,
   MoreHorizontal, 
   Calendar,
   CheckCircle2,
@@ -12,37 +12,114 @@ import {
   AlertCircle,
   Edit,
   Trash2,
-  UserCircle
+  UserCircle,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
+import { useConnection } from '../../lib/ConnectionContext';
 import CreateOrderDialog from '../modals/CreateOrderDialog';
 import { ConfirmDeleteDialog } from '../common/ConfirmDeleteDialog';
 import { api } from '../../lib/api';
 import { formatCurrency, formatDateForDisplay } from '../../lib/formatters';
+import { generatePurchaseInvoicePdf } from '../../lib/invoicePdf';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '../ui/popover';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
+
+const PAGE_SIZE = 20;
 
 export function Procurement() {
-  const { purchaseOrders, providers, managers, currentUser, isLoading, refresh } = useStore();
+  const { purchaseOrders, providers, managers, currentUser, isLoading, refresh, products } = useStore();
+  const { isOnline } = useConnection();
   const { t } = useTranslation();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [orderToDelete, setOrderToDelete] = useState<any>(null);
-  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    startDate: '',
+    endDate: '',
+    status: 'all',
+    paymentStatus: 'all'
+  });
+  const [page, setPage] = useState(1);
+
   const getProviderName = (id: string) => providers.find(p => p.id === id)?.name || t('common.unknown');
   const getManagerName = (id: string) => {
     if (id && id === currentUser?.id) return currentUser.name || t('common.unknown');
     return managers.find(m => m.id === id)?.name || t('common.unknown');
   };
 
+  const clearFilters = () => {
+    setFilters({ startDate: '', endDate: '', status: 'all', paymentStatus: 'all' });
+    setSearchTerm('');
+  };
+
+  const filteredOrders = useMemo(() => {
+    return purchaseOrders.filter((po) => {
+      const poDate = new Date(po.initiationDate || 0);
+      const matchesDate =
+        (!filters.startDate || poDate >= new Date(filters.startDate + 'T00:00:00.000Z')) &&
+        (!filters.endDate || poDate <= new Date(filters.endDate + 'T23:59:59.999Z'));
+      const matchesStatus = filters.status === 'all' || po.status === filters.status || (filters.status === 'pending' && po.status === 'draft');
+      const percentPaid = po.totalAmount > 0 ? ((po.amountPaid || 0) / po.totalAmount) * 100 : 100;
+      const matchesPayment = filters.paymentStatus === 'all' ||
+        (filters.paymentStatus === 'paid' && percentPaid >= 100) ||
+        (filters.paymentStatus === 'unpaid' && percentPaid === 0) ||
+        (filters.paymentStatus === 'partial' && percentPaid > 0 && percentPaid < 100);
+      return matchesDate && matchesStatus && matchesPayment;
+    });
+  }, [purchaseOrders, filters]);
+
+  const searchFilteredOrders = useMemo(() => {
+    if (!searchTerm.trim()) return filteredOrders;
+    const q = searchTerm.trim().toLowerCase();
+    return filteredOrders.filter((po) => {
+      const idStr = (po.id || '').toUpperCase();
+      const providerName = providers.find((p) => p.id === po.providerId)?.name || '';
+      const providerStr = providerName.toLowerCase();
+      return idStr.toLowerCase().includes(q) || providerStr.includes(q);
+    });
+  }, [filteredOrders, searchTerm, providers]);
+
   const sortedPurchaseOrders = useMemo(
-    () => [...purchaseOrders].sort((a, b) => (b.initiationDate || '').localeCompare(a.initiationDate || '')),
-    [purchaseOrders]
+    () => [...searchFilteredOrders].sort((a, b) => (b.initiationDate || '').localeCompare(a.initiationDate || '')),
+    [searchFilteredOrders]
   );
+
+  const totalPages = Math.max(1, Math.ceil(sortedPurchaseOrders.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedOrders = useMemo(
+    () => sortedPurchaseOrders.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [sortedPurchaseOrders, safePage]
+  );
+
+  React.useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [totalPages, page]);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [filters.startDate, filters.endDate, filters.status, filters.paymentStatus, searchTerm]);
 
   const handleEditOrder = (order: any) => {
     setEditingOrder(order);
@@ -71,6 +148,29 @@ export function Procurement() {
     }
   };
 
+  const handleGenerateInvoice = async (po: any) => {
+    const invoiceI18n = {
+      title: t('invoice.title'),
+      natureSale: t('invoice.natureSale'),
+      naturePurchase: t('invoice.naturePurchase'),
+      reference: t('invoice.reference'),
+      date: t('invoice.date'),
+      client: t('invoice.client'),
+      provider: t('invoice.provider'),
+      product: t('invoice.product'),
+      quantity: t('invoice.quantity'),
+      unitPrice: t('invoice.unitPrice'),
+      lineTotal: t('invoice.lineTotal'),
+      total: t('invoice.total'),
+      amountPaid: t('invoice.amountPaid'),
+      remaining: t('invoice.remaining'),
+    };
+    await generatePurchaseInvoicePdf(po, invoiceI18n, getProviderName, getProductName);
+  };
+
+  const getProductName = (id: string) =>
+    (products || []).find((p: { id: string }) => p.id === id)?.name ?? t('common.unknown');
+
   if (isLoading) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
@@ -88,7 +188,8 @@ export function Procurement() {
         </div>
         <button 
           onClick={() => setIsCreateOpen(true)}
-          className="flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30 transition-all hover:-translate-y-0.5"
+          disabled={!isOnline}
+          className="flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
         >
           <Plus className="w-4 h-4 mr-2" />
           {t('procurement.createOrder')}
@@ -119,13 +220,89 @@ export function Procurement() {
             <input 
               type="text"
               placeholder={t('procurement.searchPlaceholder')}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm outline-none ring-0 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-500 transition-all shadow-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400"
             />
           </div>
-          <button className="flex items-center px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors shadow-sm">
-            <Filter className="w-4 h-4 mr-2" />
-            {t('procurement.filterStatus')}
-          </button>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className={`flex items-center px-4 py-2.5 border rounded-xl text-sm font-medium transition-colors shadow-sm ${
+                Object.values(filters).some(v => v !== 'all' && v !== '')
+                  ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/20 dark:border-indigo-800 dark:text-indigo-400'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400'
+              }`}>
+                <Filter className="w-4 h-4 mr-2" />
+                {t('procurement.filter')}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-4" align="end">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-semibold text-sm">{t('procurement.filter')}</h4>
+                  <button onClick={clearFilters} className="text-xs text-slate-500 hover:text-indigo-600">{t('procurement.filters.clear')}</button>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="po-date-range">{t('procurement.table.date')}</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="po-startDate" className="text-xs text-slate-500">{t('procurement.filters.startDate')}</Label>
+                      <Input
+                        id="po-startDate"
+                        type="date"
+                        value={filters.startDate}
+                        onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="po-endDate" className="text-xs text-slate-500">{t('procurement.filters.endDate')}</Label>
+                      <Input
+                        id="po-endDate"
+                        type="date"
+                        value={filters.endDate}
+                        onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="po-status">{t('procurement.table.status')}</Label>
+                  <Select value={filters.status} onValueChange={(v) => setFilters({ ...filters, status: v })}>
+                    <SelectTrigger id="po-status" className="h-9">
+                      <SelectValue placeholder={t('common.allOptions')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('common.allOptions')}</SelectItem>
+                      <SelectItem value="draft">{t('procurement.status.draft')}</SelectItem>
+                      <SelectItem value="pending">{t('procurement.status.pending')}</SelectItem>
+                      <SelectItem value="completed">{t('procurement.status.received')}</SelectItem>
+                      <SelectItem value="cancelled">{t('procurement.status.cancelled')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="po-payment">{t('procurement.filters.paymentStatus')}</Label>
+                  <Select value={filters.paymentStatus} onValueChange={(v) => setFilters({ ...filters, paymentStatus: v })}>
+                    <SelectTrigger id="po-payment" className="h-9">
+                      <SelectValue placeholder={t('common.allOptions')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('common.allOptions')}</SelectItem>
+                      <SelectItem value="paid">{t('procurement.paid')}</SelectItem>
+                      <SelectItem value="partial">{t('procurement.status.pending')}</SelectItem>
+                      <SelectItem value="unpaid">{t('sales.filters.unpaid')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="overflow-x-auto min-h-[400px]">
@@ -144,7 +321,14 @@ export function Procurement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {sortedPurchaseOrders.map((po) => {
+                {sortedPurchaseOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                      {t('procurement.empty', { defaultValue: 'No purchase orders yet' })}
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedOrders.map((po) => {
                   const amountPaid = po.amountPaid || 0;
                   const percentDisplay = po.totalAmount > 0 ? Math.round((amountPaid / po.totalAmount) * 100) : (po.status === 'completed' ? 100 : 0);
                   return (
@@ -191,12 +375,16 @@ export function Procurement() {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem className="cursor-pointer" onClick={() => handleEditOrder(po)}>
+                            <DropdownMenuItem className="cursor-pointer" onClick={() => handleGenerateInvoice(po)}>
+                              <FileText className="w-4 h-4 mr-2" />
+                              {t('invoice.button')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem disabled={!isOnline} className="cursor-pointer" onClick={() => isOnline && handleEditOrder(po)}>
                               <Edit className="w-4 h-4 mr-2" />
                               {t('common.edit')}
                             </DropdownMenuItem>
                             {currentUser?.role === 'manager' && (
-                            <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleRequestDeleteOrder(po)}>
+                            <DropdownMenuItem disabled={!isOnline} className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => isOnline && handleRequestDeleteOrder(po)}>
                               <Trash2 className="w-4 h-4 mr-2" />
                               {t('common.delete')}
                             </DropdownMenuItem>
@@ -206,7 +394,8 @@ export function Procurement() {
                       </td>
                     </tr>
                   );
-                })}
+                })
+                )}
               </tbody>
             </table>
           </div>
@@ -218,7 +407,7 @@ export function Procurement() {
                 {t('procurement.empty', { defaultValue: 'No purchase orders yet' })}
               </div>
             ) : (
-              sortedPurchaseOrders.map((po) => {
+              paginatedOrders.map((po) => {
                 const percentDisplay = po.totalAmount > 0 ? Math.round(((po.amountPaid || 0) / po.totalAmount) * 100) : (po.status === 'completed' ? 100 : 0);
                 return (
                   <div key={po.id} className="p-5 space-y-4 active:bg-slate-50 dark:active:bg-slate-800/50 transition-colors">
@@ -247,12 +436,16 @@ export function Procurement() {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="min-w-[160px]">
-                          <DropdownMenuItem className="cursor-pointer py-3 text-sm" onClick={() => handleEditOrder(po)}>
+                          <DropdownMenuItem className="cursor-pointer py-3 text-sm" onClick={() => handleGenerateInvoice(po)}>
+                            <FileText className="w-4 h-4 mr-3" />
+                            {t('invoice.button')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem disabled={!isOnline} className="cursor-pointer py-3 text-sm" onClick={() => isOnline && handleEditOrder(po)}>
                             <Edit className="w-4 h-4 mr-3" />
                             {t('common.edit')}
                           </DropdownMenuItem>
                           {currentUser?.role === 'manager' && (
-                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer py-3 text-sm" onClick={() => handleRequestDeleteOrder(po)}>
+                          <DropdownMenuItem disabled={!isOnline} className="text-rose-600 focus:text-rose-600 cursor-pointer py-3 text-sm" onClick={() => isOnline && handleRequestDeleteOrder(po)}>
                             <Trash2 className="w-4 h-4 mr-3" />
                             {t('common.delete')}
                           </DropdownMenuItem>
@@ -282,6 +475,48 @@ export function Procurement() {
             )}
           </div>
         </div>
+
+        {sortedPurchaseOrders.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                {t('activity.paginationShowing', {
+                  from: (safePage - 1) * PAGE_SIZE + 1,
+                  to: Math.min(safePage * PAGE_SIZE, sortedPurchaseOrders.length),
+                  total: sortedPurchaseOrders.length,
+                })}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400" aria-hidden>
+                {t('activity.perPage', { count: PAGE_SIZE })}
+              </p>
+            </div>
+            <nav className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end" aria-label={t('activity.paginationPage', { current: safePage, total: totalPages })}>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                aria-label={t('activity.paginationAriaPrev')}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                {t('activity.paginationPrev')}
+              </button>
+              <span className="px-3 py-2 min-h-[44px] flex items-center text-sm font-medium text-slate-600 dark:text-slate-400">
+                {t('activity.paginationPage', { current: safePage, total: totalPages })}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                aria-label={t('activity.paginationAriaNext')}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+              >
+                {t('activity.paginationNext')}
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </nav>
+          </div>
+        )}
       </div>
     </div>
   );

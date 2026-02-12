@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   Search, 
-  Filter, 
   ArrowUpRight,
   ArrowDownRight,
   Download,
   Loader2,
-  Package
+  Package,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -27,7 +28,11 @@ export function Finance() {
   const [timeRange, setTimeRange] = useState('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'sale' | 'purchase_order'>('all');
   const [responsibleFilter, setResponsibleFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
   const dateLocale = i18n.language?.startsWith('fr') ? 'fr-FR' : 'en-GB';
+
+  const PAGE_SIZE = 20;
 
   const getTimeRangeLabel = (range: string) =>
     range === 'all' ? t('dashboard.filter.allTime') : t(`dashboard.filter.${range}`);
@@ -58,12 +63,41 @@ export function Finance() {
   };
 
   const filteredPayments = getFilteredPayments();
-  const sortedPayments = React.useMemo(
-    () => [...filteredPayments].sort((a, b) => (b.date || '').localeCompare(a.date || '')),
-    [filteredPayments]
-  );
   const totalInflow = filteredPayments.filter(p => p.referenceType === 'sale').reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
   const totalOutflow = filteredPayments.filter(p => p.referenceType === 'purchase_order').reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+
+  const searchFilteredPayments = React.useMemo(() => {
+    if (!searchTerm.trim()) return filteredPayments;
+    const q = searchTerm.trim().toLowerCase();
+    return filteredPayments.filter((p) => {
+      const dateStr = formatDateForDisplay(p.date) ?? '';
+      const typeStr = p.referenceType === 'sale' ? t('finance.incoming') : t('finance.outgoing');
+      const refStr = (p.referenceId ?? '').toUpperCase();
+      const managerStr = getManagerName(p.managerId ?? '');
+      const amountStr = formatCurrency(Number(p.amount) || 0);
+      return [dateStr, typeStr, refStr, managerStr, amountStr].some((s) => s.toLowerCase().includes(q));
+    });
+  }, [filteredPayments, searchTerm, t]);
+
+  const sortedPayments = React.useMemo(
+    () => [...searchFilteredPayments].sort((a, b) => (b.date || '').localeCompare(a.date || '')),
+    [searchFilteredPayments]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(sortedPayments.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedPayments = React.useMemo(
+    () => sortedPayments.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [sortedPayments, safePage]
+  );
+
+  React.useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [totalPages, page]);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [timeRange, typeFilter, responsibleFilter, searchTerm]);
 
   const totalStockValue = React.useMemo(
     () =>
@@ -164,71 +198,26 @@ export function Finance() {
           <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{t('finance.title')}</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm font-medium">{t('finance.subtitle')}</p>
         </div>
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider" htmlFor="finance-filter-period">
-              {t('finance.filterPeriod')}
-            </label>
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger id="finance-filter-period" className="w-auto min-w-[180px] h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 text-sm font-medium">
-                <SelectValue placeholder={t('dashboard.filter.allTime')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('dashboard.filter.allTime')}</SelectItem>
-                <SelectItem value="last24Hours">{t('dashboard.filter.last24Hours')}</SelectItem>
-                <SelectItem value="last7Days">{t('dashboard.filter.last7Days')}</SelectItem>
-                <SelectItem value="last30Days">{t('dashboard.filter.last30Days')}</SelectItem>
-                <SelectItem value="lastTrimester">{t('dashboard.filter.lastTrimester')}</SelectItem>
-                <SelectItem value="lastYear">{t('dashboard.filter.lastYear')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider" htmlFor="finance-filter-type">
-              {t('finance.filterType')}
-            </label>
-            <Select value={typeFilter} onValueChange={(v: 'all' | 'sale' | 'purchase_order') => setTypeFilter(v)}>
-              <SelectTrigger id="finance-filter-type" className="w-auto min-w-[140px] h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 text-sm font-medium">
-                <SelectValue placeholder={t('finance.filterType')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('finance.filterTypeAll')}</SelectItem>
-                <SelectItem value="sale">{t('finance.incoming')}</SelectItem>
-                <SelectItem value="purchase_order">{t('finance.outgoing')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider" htmlFor="finance-filter-responsible">
-              {t('finance.filterResponsible')}
-            </label>
-            <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
-              <SelectTrigger id="finance-filter-responsible" className="w-auto min-w-[160px] h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 text-sm font-medium">
-                <SelectValue placeholder={t('finance.filterResponsible')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('finance.filterResponsibleAll')}</SelectItem>
-                <SelectItem value="__none__">{t('finance.filterResponsibleUnassigned')}</SelectItem>
-                {managers.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>{m.name || t('common.unknown')}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1.5 pb-0">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider opacity-0 pointer-events-none select-none" aria-hidden="true">.</span>
-            <button 
-              onClick={handleDownloadReport}
-              className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium text-sm whitespace-nowrap transition-colors shadow-sm hover:border-slate-300 dark:hover:border-slate-700"
-            >
-              <Download className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-              {t('finance.exportReport')}
-            </button>
-          </div>
-        </div>
+        <button 
+          onClick={handleDownloadReport}
+          className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium text-sm whitespace-nowrap transition-colors shadow-sm hover:border-slate-300 dark:hover:border-slate-700"
+        >
+          <Download className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+          {t('finance.exportReport')}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex items-center justify-between group hover:shadow-lg transition-all">
+          <div>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.totalStockValue')}</p>
+            <h3 className="text-3xl font-bold text-slate-700 dark:text-slate-200 mt-1 tracking-tight tabular-nums group-hover:scale-105 transition-transform origin-left">{formatCurrency(totalStockValue)}</h3>
+          </div>
+          <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl">
+            <Package className="w-6 h-6" />
+          </div>
+        </div>
+
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex items-center justify-between group hover:shadow-lg transition-all">
           <div>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.totalRevenue')}</p>
@@ -238,7 +227,7 @@ export function Finance() {
             <ArrowUpRight className="w-6 h-6" />
           </div>
         </div>
-        
+
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex items-center justify-between group hover:shadow-lg transition-all">
           <div>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.totalExpenses')}</p>
@@ -260,28 +249,59 @@ export function Finance() {
             <DollarSignIcon className="w-6 h-6" />
           </div>
         </div>
-
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex items-center justify-between group hover:shadow-lg transition-all">
-          <div>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.totalStockValue')}</p>
-            <h3 className="text-3xl font-bold text-slate-700 dark:text-slate-200 mt-1 tracking-tight tabular-nums group-hover:scale-105 transition-transform origin-left">{formatCurrency(totalStockValue)}</h3>
-          </div>
-          <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl">
-            <Package className="w-6 h-6" />
-          </div>
-        </div>
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden">
-        <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-800/50">
-          <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base sm:text-lg">{t('finance.transactionHistory')}</h2>
-          <div className="flex space-x-2">
-            <button type="button" className="p-2 text-slate-500 hover:bg-white hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400 rounded-lg transition-all hover:shadow-sm" aria-label="Search">
-              <Search className="w-4.5 h-4.5" />
-            </button>
-            <button type="button" className="p-2 text-slate-500 hover:bg-white hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400 rounded-lg transition-all hover:shadow-sm" aria-label="Filter">
-              <Filter className="w-4.5 h-4.5" />
-            </button>
+        <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-3 bg-slate-50/50 dark:bg-slate-800/50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <h2 className="font-bold text-slate-900 dark:text-slate-100 text-base sm:text-lg">{t('finance.transactionHistory')}</h2>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <div className="relative flex-1 sm:flex-initial min-w-[200px] sm:min-w-[240px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder={t('finance.searchTransactionsPlaceholder')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 dark:focus:border-indigo-500"
+                />
+              </div>
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger className="w-auto min-w-[130px] h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 text-sm font-medium">
+                  <SelectValue placeholder={t('finance.filterPeriod')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('dashboard.filter.allTime')}</SelectItem>
+                  <SelectItem value="last24Hours">{t('dashboard.filter.last24Hours')}</SelectItem>
+                  <SelectItem value="last7Days">{t('dashboard.filter.last7Days')}</SelectItem>
+                  <SelectItem value="last30Days">{t('dashboard.filter.last30Days')}</SelectItem>
+                  <SelectItem value="lastTrimester">{t('dashboard.filter.lastTrimester')}</SelectItem>
+                  <SelectItem value="lastYear">{t('dashboard.filter.lastYear')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={typeFilter} onValueChange={(v: 'all' | 'sale' | 'purchase_order') => setTypeFilter(v)}>
+                <SelectTrigger className="w-auto min-w-[120px] h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 text-sm font-medium">
+                  <SelectValue placeholder={t('finance.filterType')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('finance.filterTypeAll')}</SelectItem>
+                  <SelectItem value="sale">{t('finance.incoming')}</SelectItem>
+                  <SelectItem value="purchase_order">{t('finance.outgoing')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
+                <SelectTrigger className="w-auto min-w-[140px] h-10 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 text-sm font-medium">
+                  <SelectValue placeholder={t('finance.filterResponsible')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('finance.filterResponsibleAll')}</SelectItem>
+                  <SelectItem value="__none__">{t('finance.filterResponsibleUnassigned')}</SelectItem>
+                  {managers.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>{m.name || t('common.unknown')}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
@@ -298,7 +318,7 @@ export function Finance() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {sortedPayments.map((payment) => (
+              {paginatedPayments.map((payment) => (
                 <tr key={payment.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
                   <td className="px-4 lg:px-6 py-3 lg:py-4 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDateForDisplay(payment.date)}</td>
                   <td className="px-4 lg:px-6 py-3 lg:py-4">
@@ -327,7 +347,7 @@ export function Finance() {
 
         {/* Mobile: card list */}
         <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800 min-h-[200px]">
-          {sortedPayments.map((p) => (
+          {paginatedPayments.map((p) => (
             <div key={p.id} className="p-4 flex justify-between items-start gap-3 active:bg-slate-50/80 dark:active:bg-slate-800/50">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -351,6 +371,48 @@ export function Finance() {
             </div>
           ))}
         </div>
+
+        {sortedPayments.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                {t('activity.paginationShowing', {
+                  from: sortedPayments.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1,
+                  to: Math.min(safePage * PAGE_SIZE, sortedPayments.length),
+                  total: sortedPayments.length,
+                })}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400" aria-hidden>
+                {t('activity.perPage', { count: PAGE_SIZE })}
+              </p>
+            </div>
+            <nav className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end" aria-label={t('activity.paginationPage', { current: safePage, total: totalPages })}>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                aria-label={t('activity.paginationAriaPrev')}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                {t('activity.paginationPrev')}
+              </button>
+              <span className="px-3 py-2 min-h-[44px] flex items-center text-sm font-medium text-slate-600 dark:text-slate-400">
+                {t('activity.paginationPage', { current: safePage, total: totalPages })}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                aria-label={t('activity.paginationAriaNext')}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+              >
+                {t('activity.paginationNext')}
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </nav>
+          </div>
+        )}
       </div>
     </div>
   );

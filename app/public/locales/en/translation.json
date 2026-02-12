@@ -61,6 +61,7 @@
     "monthlySales": "Monthly Sales Growth",
     "distribution": "Distribution of stock items",
     "bestSellers": "Most popular items by quantity sold",
+    "quantityLabel": "Quantity",
     "statusDistribution": "Distribution of purchase orders",
     "salesTrend": "Sales performance over time",
     "recentActivity": "Recent Activity",
@@ -70,8 +71,10 @@
         "last24Hours": "Last 24 hours",
         "last7Days": "Last 7 Days",
         "last30Days": "Last 30 Days",
-        "lastTrimester": "Last Quarter",
-        "lastYear": "Last Year"
+        "lastMonth": "Last month",
+        "lastTrimester": "Last quarter",
+        "lastYear": "Last year",
+        "last5Years": "Last 5 years"
     },
     "downloadReport": "Download Report",
     "actionNeeded": "Action needed",
@@ -186,6 +189,7 @@
     "netFlow": "Net Flow",
     "totalStockValue": "Total stock value",
     "transactionHistory": "Transaction History",
+    "searchTransactionsPlaceholder": "Search by date, reference, responsible, amount…",
     "table": {
       "date": "Date",
       "type": "Type",
@@ -204,7 +208,13 @@
     "purchaseOrder": "purchase order",
     "createOrder": "Create Order",
     "searchPlaceholder": "Search by Order ID, Provider...",
-    "filterStatus": "Filter Status",
+    "filter": "Filter",
+    "filters": {
+      "startDate": "Start date",
+      "endDate": "End date",
+      "paymentStatus": "Payment status",
+      "clear": "Clear filters"
+    },
     "table": {
       "orderId": "Order ID",
       "provider": "Provider",
@@ -247,7 +257,8 @@
       "endDate": "End Date",
       "paymentStatus": "Payment Status",
       "clear": "Clear Filters",
-      "apply": "Apply"
+      "apply": "Apply",
+      "unpaid": "Unpaid"
     },
     "paid": "paid",
     "empty": "No sales yet"
@@ -402,7 +413,25 @@
   "connection": {
     "connected": "Connected",
     "offline": "Offline",
-    "syncing": "Syncing..."
+    "syncing": "Syncing...",
+    "offlineOnly": "Offline mode: consultation only. Modifications and deletions are disabled."
+  },
+  "invoice": {
+    "title": "Invoice",
+    "natureSale": "Sale of products",
+    "naturePurchase": "Purchase of stock",
+    "reference": "Reference",
+    "date": "Date",
+    "client": "Client",
+    "provider": "Provider",
+    "product": "Product",
+    "quantity": "Quantity",
+    "unitPrice": "Unit price",
+    "lineTotal": "Line total",
+    "total": "Total",
+    "amountPaid": "Amount paid",
+    "remaining": "Remaining due",
+    "button": "Invoice"
   },
   "common": {
     "edit": "Edit",

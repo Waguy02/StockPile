@@ -61,6 +61,7 @@
     "monthlySales": "Croissance mensuelle des ventes",
     "distribution": "Répartition des articles en stock",
     "bestSellers": "Articles les plus populaires par quantité vendue",
+    "quantityLabel": "Quantité",
     "statusDistribution": "Répartition des bons de commande",
     "salesTrend": "Performance des ventes au fil du temps",
     "recentActivity": "Activité Récente",
@@ -70,8 +71,10 @@
         "last24Hours": "24 dernières heures",
         "last7Days": "7 derniers jours",
         "last30Days": "30 derniers jours",
-        "lastTrimester": "Dernier trimestre",
-        "lastYear": "L'année dernière"
+        "lastMonth": "Le dernier mois",
+        "lastTrimester": "Le dernier trimestre",
+        "lastYear": "La dernière année",
+        "last5Years": "Les 5 dernières années"
     },
     "downloadReport": "Télécharger Rapport",
     "actionNeeded": "Action requise",
@@ -194,6 +197,7 @@
     "netFlow": "Flux Net",
     "totalStockValue": "Valeur totale du stock",
     "transactionHistory": "Historique des Transactions",
+    "searchTransactionsPlaceholder": "Rechercher par date, référence, responsable, montant…",
     "table": {
       "date": "Date",
       "type": "Type",
@@ -212,7 +216,13 @@
     "purchaseOrder": "bon de commande",
     "createOrder": "Créer Commande",
     "searchPlaceholder": "Rech. par ID Commande, Fournisseur...",
-    "filterStatus": "Filtrer Statut",
+    "filter": "Filtrer",
+    "filters": {
+      "startDate": "Date début",
+      "endDate": "Date fin",
+      "paymentStatus": "Statut Paiement",
+      "clear": "Effacer filtres"
+    },
     "table": {
       "orderId": "ID Commande",
       "provider": "Fournisseur",
@@ -255,7 +265,8 @@
       "endDate": "Date fin",
       "paymentStatus": "Statut Paiement",
       "clear": "Effacer filtres",
-      "apply": "Appliquer"
+      "apply": "Appliquer",
+      "unpaid": "Non payé"
     },
     "paid": "payé",
     "empty": "Aucune vente pour le moment"
@@ -410,7 +421,25 @@
   "connection": {
     "connected": "Connecté",
     "offline": "Hors ligne",
-    "syncing": "Synchronisation..."
+    "syncing": "Synchronisation...",
+    "offlineOnly": "Mode hors ligne : consultation uniquement. Les modifications et suppressions sont désactivées."
+  },
+  "invoice": {
+    "title": "Facture",
+    "natureSale": "Vente de produits",
+    "naturePurchase": "Achat de stocks",
+    "reference": "Référence",
+    "date": "Date",
+    "client": "Client",
+    "provider": "Fournisseur",
+    "product": "Produit",
+    "quantity": "Quantité",
+    "unitPrice": "Prix unitaire",
+    "lineTotal": "Total ligne",
+    "total": "Total",
+    "amountPaid": "Montant payé",
+    "remaining": "Restant à payer",
+    "button": "Facture"
   },
   "common": {
     "edit": "Modifier",

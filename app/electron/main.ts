@@ -32,6 +32,7 @@ const createWindow = () => {
   }
   
   mainWindow.setMenuBarVisibility(false);
+  mainWindow.setTitle('OdicamStock');
 };
 
 // This method will be called when Electron has finished

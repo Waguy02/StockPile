@@ -10,6 +10,7 @@ import { Admin } from './components/pages/Admin';
 import { Activity } from './components/pages/Activity';
 import { ViewState } from './lib/data';
 import { StoreProvider, useStore } from './lib/StoreContext';
+import { ConnectionProvider } from './lib/ConnectionContext';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { queryClient, persister } from './lib/queryClient';
@@ -81,9 +82,11 @@ function App() {
       persistOptions={{ persister }}
     >
       <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <StoreProvider>
-          <AppContent />
-        </StoreProvider>
+        <ConnectionProvider>
+          <StoreProvider>
+            <AppContent />
+          </StoreProvider>
+        </ConnectionProvider>
       </ThemeProvider>
     </PersistQueryClientProvider>
   );

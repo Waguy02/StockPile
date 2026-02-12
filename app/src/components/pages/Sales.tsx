@@ -11,13 +11,18 @@ import {
   CreditCard,
   Edit,
   Trash2,
-  X
+  X,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
+import { useConnection } from '../../lib/ConnectionContext';
 import CreateOrderDialog from '../modals/CreateOrderDialog';
 import { ConfirmDeleteDialog } from '../common/ConfirmDeleteDialog';
 import { api } from '../../lib/api';
 import { formatCurrency, formatDateForDisplay } from '../../lib/formatters';
+import { generateSaleInvoicePdf } from '../../lib/invoicePdf';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +47,7 @@ import { Badge } from '../ui/badge';
 
 export function Sales() {
   const { sales, customers, managers, products, isLoading, refresh, currentUser } = useStore();
+  const { isOnline } = useConnection();
   const { t } = useTranslation();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<any>(null);
@@ -55,6 +61,8 @@ export function Sales() {
     status: 'all',
     paymentStatus: 'all'
   });
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   // Filter sales based on role: staff only see sales where they are the responsible
   const relevantSales = React.useMemo(() => {
@@ -98,6 +106,26 @@ export function Sales() {
       }
   };
 
+  const handleGenerateInvoice = async (sale: any) => {
+    const invoiceI18n = {
+      title: t('invoice.title'),
+      natureSale: t('invoice.natureSale'),
+      naturePurchase: t('invoice.naturePurchase'),
+      reference: t('invoice.reference'),
+      date: t('invoice.date'),
+      client: t('invoice.client'),
+      provider: t('invoice.provider'),
+      product: t('invoice.product'),
+      quantity: t('invoice.quantity'),
+      unitPrice: t('invoice.unitPrice'),
+      lineTotal: t('invoice.lineTotal'),
+      total: t('invoice.total'),
+      amountPaid: t('invoice.amountPaid'),
+      remaining: t('invoice.remaining'),
+    };
+    await generateSaleInvoicePdf(sale, invoiceI18n, getCustomerName, getProductName);
+  };
+
   const clearFilters = () => {
     setFilters({
       startDate: '',
@@ -133,6 +161,21 @@ export function Sales() {
     () => [...filteredSales].sort((a, b) => (b.initiationDate || '').localeCompare(a.initiationDate || '')),
     [filteredSales]
   );
+
+  const totalPages = Math.max(1, Math.ceil(sortedSales.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedSales = React.useMemo(
+    () => sortedSales.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [sortedSales, safePage]
+  );
+
+  React.useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [totalPages, page]);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [filters.startDate, filters.endDate, filters.status, filters.paymentStatus, searchTerm]);
 
   const getProductsDisplay = (items: any[]) => {
     if (!items || items.length === 0) return '-';
@@ -175,7 +218,8 @@ export function Sales() {
         </div>
         <button 
           onClick={() => setIsCreateOpen(true)}
-          className="flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30 transition-all hover:-translate-y-0.5"
+          disabled={!isOnline}
+          className="flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
         >
           <Plus className="w-4 h-4 mr-2" />
           {t('sales.newSale')}
@@ -280,7 +324,7 @@ export function Sales() {
                       <SelectItem value="all">{t('common.allOptions')}</SelectItem>
                       <SelectItem value="paid">{t('sales.paid')}</SelectItem>
                       <SelectItem value="partial">{t('procurement.status.pending')}</SelectItem>
-                      <SelectItem value="unpaid">Unpaid</SelectItem>
+                      <SelectItem value="unpaid">{t('sales.filters.unpaid')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -314,7 +358,7 @@ export function Sales() {
                     </td>
                   </tr>
                 ) : (
-                sortedSales.map((sale) => {
+                paginatedSales.map((sale) => {
                   const percentPaid = sale.totalAmount > 0 ? Math.round((sale.amountPaid / sale.totalAmount) * 100) : 100;
                   return (
                     <tr key={sale.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
@@ -375,12 +419,16 @@ export function Sales() {
                               </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                  <DropdownMenuItem className="cursor-pointer" onClick={() => handleEditSale(sale)}>
+                                  <DropdownMenuItem className="cursor-pointer" onClick={() => handleGenerateInvoice(sale)}>
+                                      <FileText className="w-4 h-4 mr-2" />
+                                      {t('invoice.button')}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem disabled={!isOnline} className="cursor-pointer" onClick={() => isOnline && handleEditSale(sale)}>
                                       <Edit className="w-4 h-4 mr-2" />
                                       {t('common.edit')}
                                   </DropdownMenuItem>
                                   {currentUser?.role === 'manager' && (
-                                  <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleRequestDeleteSale(sale)}>
+                                  <DropdownMenuItem disabled={!isOnline} className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => isOnline && handleRequestDeleteSale(sale)}>
                                       <Trash2 className="w-4 h-4 mr-2" />
                                       {t('common.delete')}
                                   </DropdownMenuItem>
@@ -403,7 +451,7 @@ export function Sales() {
                 {t('sales.empty', { defaultValue: 'No sales yet' })}
               </div>
             ) : (
-              sortedSales.map((sale) => {
+              paginatedSales.map((sale) => {
                 const percentPaid = sale.totalAmount > 0 ? Math.round((sale.amountPaid / sale.totalAmount) * 100) : 100;
                 return (
                   <div key={sale.id} className="p-5 space-y-4 active:bg-slate-50 dark:active:bg-slate-800/50 transition-colors">
@@ -432,12 +480,16 @@ export function Sales() {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="min-w-[160px]">
-                          <DropdownMenuItem className="cursor-pointer py-3 text-sm" onClick={() => handleEditSale(sale)}>
+                          <DropdownMenuItem className="cursor-pointer py-3 text-sm" onClick={() => handleGenerateInvoice(sale)}>
+                            <FileText className="w-4 h-4 mr-3" />
+                            {t('invoice.button')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem disabled={!isOnline} className="cursor-pointer py-3 text-sm" onClick={() => isOnline && handleEditSale(sale)}>
                             <Edit className="w-4 h-4 mr-3" />
                             {t('common.edit')}
                           </DropdownMenuItem>
                           {currentUser?.role === 'manager' && (
-                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer py-3 text-sm" onClick={() => handleRequestDeleteSale(sale)}>
+                          <DropdownMenuItem disabled={!isOnline} className="text-rose-600 focus:text-rose-600 cursor-pointer py-3 text-sm" onClick={() => isOnline && handleRequestDeleteSale(sale)}>
                             <Trash2 className="w-4 h-4 mr-3" />
                             {t('common.delete')}
                           </DropdownMenuItem>
@@ -472,6 +524,48 @@ export function Sales() {
             )}
           </div>
         </div>
+
+        {sortedSales.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                {t('activity.paginationShowing', {
+                  from: (safePage - 1) * PAGE_SIZE + 1,
+                  to: Math.min(safePage * PAGE_SIZE, sortedSales.length),
+                  total: sortedSales.length,
+                })}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400" aria-hidden>
+                {t('activity.perPage', { count: PAGE_SIZE })}
+              </p>
+            </div>
+            <nav className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end" aria-label={t('activity.paginationPage', { current: safePage, total: totalPages })}>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                aria-label={t('activity.paginationAriaPrev')}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                {t('activity.paginationPrev')}
+              </button>
+              <span className="px-3 py-2 min-h-[44px] flex items-center text-sm font-medium text-slate-600 dark:text-slate-400">
+                {t('activity.paginationPage', { current: safePage, total: totalPages })}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                aria-label={t('activity.paginationAriaNext')}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+              >
+                {t('activity.paginationNext')}
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </nav>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
 import { supabase } from '../../lib/supabase';
 import {
@@ -107,44 +107,45 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-50/90 via-slate-100 to-violet-50/90 dark:from-slate-950 dark:via-[#0f172a] dark:to-indigo-950/90 relative overflow-hidden">
+      {/* Subtle radial glow behind card for depth */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(199,210,254,0.2),transparent)] dark:bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(79,70,229,0.15),transparent)] pointer-events-none" aria-hidden />
+      {/* Large background logo */}
+      <img src="/odicam_logo.png" alt="" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(100vw,800px)] h-[min(100vh,800px)] scale-[2] object-contain opacity-30 blur-[2px] pointer-events-none select-none z-0" aria-hidden />
+      <div className="w-full max-w-md bg-[#0B1121] rounded-2xl shadow-2xl shadow-slate-900/20 dark:shadow-black/40 border border-slate-800/50 overflow-hidden relative z-10">
         <div className="p-8">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 mb-4">
-              <Sparkles className="w-7 h-7 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Odicam</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">{t('login.signInToAccount', { defaultValue: 'Sign in to your account' })}</p>
+            <img src="/odicam_logo_with_text.png" alt="Odicam - Gestion de Stock" className="w-full max-w-[220px] h-auto object-contain mb-4" />
+            <p className="text-slate-400 text-sm">{t('login.signInToAccount', { defaultValue: 'Sign in to your account' })}</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('login.email', { defaultValue: 'Email' })}</label>
+              <label className="text-sm font-medium text-slate-300">{t('login.email', { defaultValue: 'Email' })}</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-white placeholder:text-slate-500"
                 placeholder={t('login.emailPlaceholder', { defaultValue: 'you@company.com' })}
                 required
               />
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('login.password', { defaultValue: 'Password' })}</label>
+              <label className="text-sm font-medium text-slate-300">{t('login.password', { defaultValue: 'Password' })}</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-white placeholder:text-slate-500"
                 placeholder="••••••••"
                 required
               />
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 text-sm">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-rose-900/20 text-rose-400 text-sm">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 {error}
               </div>
@@ -163,14 +164,14 @@ export function Login() {
             <button
               type="button"
               onClick={handleOpenChangePassword}
-              className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+              className="text-sm text-indigo-400 hover:text-indigo-300 hover:underline"
             >
               {t('login.changePassword', { defaultValue: 'Change password' })}
             </button>
           </p>
         </div>
-        <div className="px-8 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 text-center">
-          <p className="text-xs text-slate-400">StockPILE v0.1.0</p>
+        <div className="px-8 py-4 border-t border-slate-800/50 text-center">
+          <p className="text-xs text-slate-500">StockPile v1.0.0 2026</p>
         </div>
       </div>
 

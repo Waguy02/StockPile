@@ -6,7 +6,7 @@
     "target": "ESNext",
     "outDir": "dist-electron",
     "strict": true,
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "DOM"],
     "sourceMap": false,
     "noEmit": false,
     "allowImportingTsExtensions": false

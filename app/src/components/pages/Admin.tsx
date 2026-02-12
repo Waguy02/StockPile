@@ -9,6 +9,7 @@ import {
   Trash2 
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
+import { useConnection } from '../../lib/ConnectionContext';
 import { AddUserDialog } from '../modals/AddUserDialog';
 import { ChangePasswordDialog } from '../modals/ChangePasswordDialog';
 import { ConfirmDeleteDialog } from '../common/ConfirmDeleteDialog';
@@ -22,6 +23,7 @@ import { api } from '../../lib/api';
 
 export function Admin() {
   const { isLoading, refresh, currentUser } = useStore();
+  const { isOnline } = useConnection();
   const { t } = useTranslation();
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -119,14 +121,16 @@ export function Admin() {
             <div className="flex gap-2">
                 <button 
                     onClick={() => setResetConfirmOpen(true)}
-                    className="flex items-center px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-rose-200 dark:shadow-rose-900/30 transition-all hover:-translate-y-0.5"
+                    disabled={!isOnline}
+                    className="flex items-center px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-rose-200 dark:shadow-rose-900/30 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                 >
                     <Trash2 className="w-4 h-4 mr-2" />
                     {t('admin.resetDatabase', 'Reset Database')}
                 </button>
                 <button 
                     onClick={handleAddUser}
-                    className="flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30 transition-all hover:-translate-y-0.5"
+                    disabled={!isOnline}
+                    className="flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                 >
                     <UserPlus className="w-4 h-4 mr-2" />
                     {t('admin.addUser')}
@@ -194,11 +198,11 @@ export function Admin() {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem className="cursor-pointer" onClick={() => handleChangePassword(manager)}>
+                            <DropdownMenuItem disabled={!isOnline} className="cursor-pointer" onClick={() => isOnline && handleChangePassword(manager)}>
                                 <Lock className="w-4 h-4 mr-2" />
                                 {t('admin.actions.resetPassword')}
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer" onClick={() => handleToggleStatus(manager)}>
+                            <DropdownMenuItem disabled={!isOnline} className="cursor-pointer" onClick={() => isOnline && handleToggleStatus(manager)}>
                                 {manager.status === 'active' ? (
                                     <>
                                         <div className="w-4 h-4 mr-2 rounded-full border-2 border-slate-400" />
@@ -212,7 +216,7 @@ export function Admin() {
                                 )}
                             </DropdownMenuItem>
                             {currentUser?.id !== manager.id && (
-                                <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleRequestDeleteUser(manager)}>
+                                <DropdownMenuItem disabled={!isOnline} className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => isOnline && handleRequestDeleteUser(manager)}>
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     {t('common.delete')}
                                 </DropdownMenuItem>
@@ -258,11 +262,11 @@ export function Admin() {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem className="cursor-pointer" onClick={() => handleChangePassword(manager)}>
+                            <DropdownMenuItem disabled={!isOnline} className="cursor-pointer" onClick={() => isOnline && handleChangePassword(manager)}>
                                 <Lock className="w-4 h-4 mr-2" />
                                 {t('admin.actions.resetPassword')}
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer" onClick={() => handleToggleStatus(manager)}>
+                            <DropdownMenuItem disabled={!isOnline} className="cursor-pointer" onClick={() => isOnline && handleToggleStatus(manager)}>
                                 {manager.status === 'active' ? (
                                     <>
                                         <div className="w-4 h-4 mr-2 rounded-full border-2 border-slate-400" />
@@ -276,7 +280,7 @@ export function Admin() {
                                 )}
                             </DropdownMenuItem>
                             {currentUser?.id !== manager.id && (
-                                <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleRequestDeleteUser(manager)}>
+                                <DropdownMenuItem disabled={!isOnline} className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => isOnline && handleRequestDeleteUser(manager)}>
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     {t('common.delete')}
                                 </DropdownMenuItem>

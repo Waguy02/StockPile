@@ -394,8 +394,8 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title={t('dashboard.totalInventory')}
-          value={isStaff ? 'N/A' : totalStockCount.toString()} 
-          secondaryValue={isStaff ? undefined : formatCurrency(totalStockValue)}
+          value={isStaff ? 'N/A' : formatCurrency(totalStockValue)} 
+          secondaryValue={isStaff ? undefined : totalStockCount.toString()}
           subtitle={isStaff ? 'Restricted Access' : t('dashboard.itemsInStock')}
           icon={Package}
           trend={isStaff ? '' : "+12%"}
@@ -662,6 +662,16 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
                                     border: 'none',
                                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                                 }}
+                                content={({ active, payload }) => {
+                                    if (!active || !payload?.length) return null;
+                                    const item = payload[0].payload;
+                                    return (
+                                        <div className="rounded-lg border-0 bg-white dark:bg-slate-900 px-4 py-3 shadow-md">
+                                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{item.name}</p>
+                                            <p className="text-sm text-indigo-600 dark:text-indigo-400 mt-0.5">{t('dashboard.quantityLabel')} : {item.quantity}</p>
+                                        </div>
+                                    );
+                                }}
                             />
                             <Bar dataKey="quantity" fill="#8b5cf6" radius={[0, 6, 6, 0]}>
                                 {topSellingData.map((entry, index) => (
@@ -804,9 +814,9 @@ function StatCard({ title, value, secondaryValue, subtitle, icon: Icon, trend, t
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
-          <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2 tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{value}</h3>
-          {secondaryValue != null && secondaryValue !== '' && (
-            <p className="text-base font-semibold text-slate-600 dark:text-slate-300 mt-1.5 tabular-nums">{secondaryValue}</p>
+          <h3 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mt-2 tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{value}</h3>
+          {secondaryValue != null && secondaryValue !== '' && !subtitle && (
+            <p className="text-xl font-semibold text-slate-600 dark:text-slate-300 mt-1.5 tabular-nums">{secondaryValue}</p>
           )}
         </div>
         <div className={`p-3.5 rounded-xl ${s.light} group-hover:scale-110 transition-transform duration-300`}>
@@ -818,7 +828,13 @@ function StatCard({ title, value, secondaryValue, subtitle, icon: Icon, trend, t
              {trendUp ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <ArrowDownRight className="w-3 h-3 mr-1" />}
              {trend}
          </div>
-         <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">{subtitle}</p>
+         <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+           {secondaryValue != null && secondaryValue !== '' && subtitle ? (
+             <><span className="tabular-nums font-semibold text-slate-600 dark:text-slate-300">{secondaryValue}</span> {subtitle}</>
+           ) : (
+             subtitle
+           )}
+         </p>
       </div>
     </div>
   );

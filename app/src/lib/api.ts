@@ -1,7 +1,10 @@
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { supabase } from './supabase';
+import { getIsOffline } from './connectionStore';
 
 const BASE_URL = `https://${projectId}.supabase.co/functions/v1/server`;
+
+export const OFFLINE_WRITE_MSG = 'App is offline. Only consultation is available.';
 
 // Helper to handle IDs that may contain special characters like '#' which usually get stripped 
 // by proxies/gateways if only single-encoded.
@@ -9,7 +12,15 @@ const encodeId = (id: string) => encodeURIComponent(encodeURIComponent(id));
 
 type FetchOptions = RequestInit & { allowAnon?: boolean; forceAnon?: boolean };
 
+function isWriteMethod(options: FetchOptions): boolean {
+  const method = (options.method || 'GET').toUpperCase();
+  return method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE';
+}
+
 async function fetchWithAuth(path: string, options: FetchOptions = {}) {
+  if (isWriteMethod(options) && getIsOffline()) {
+    throw new Error(OFFLINE_WRITE_MSG);
+  }
   const { allowAnon, forceAnon, ...fetchOptions } = options;
   const { data: { session } } = await supabase.auth.getSession();
   let token = forceAnon ? publicAnonKey : session?.access_token;

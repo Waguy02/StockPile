@@ -13,6 +13,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
+import { useConnection } from '../../lib/ConnectionContext';
 import { api } from '../../lib/api';
 import { AddPartnerDialog } from '../modals/AddPartnerDialog';
 import { ConfirmDeleteDialog } from '../common/ConfirmDeleteDialog';
@@ -27,6 +28,7 @@ type DeleteTarget = { type: 'provider' | 'customer'; id: string; name: string };
 
 export function Partners() {
   const { providers, customers, isLoading, refresh, currentUser } = useStore();
+  const { isOnline } = useConnection();
   const { t } = useTranslation();
   const [activeModal, setActiveModal] = useState<'provider' | 'customer' | null>(null);
   const [editingPartner, setEditingPartner] = useState<any>(null);
@@ -96,10 +98,10 @@ export function Partners() {
       />
 
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:h-[calc(100vh-12rem)] lg:min-h-[500px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:max-h-[calc(100vh-16rem)] lg:h-[calc(100vh-16rem)] lg:min-h-[400px]">
         {/* Providers Section */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col h-[500px] lg:h-full">
-          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/30 dark:bg-slate-800/30">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col h-[420px] lg:h-full min-h-0">
+          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/30 dark:bg-slate-800/30 shrink-0">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                  <Building2 className="w-4 h-4" />
@@ -112,7 +114,8 @@ export function Partners() {
               </span>
               <button 
                 onClick={() => setActiveModal('provider')}
-                className="flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-xs shadow-sm transition-all"
+                disabled={!isOnline}
+                className="flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-xs shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-3 h-3 mr-1.5" />
                 {t('partners.addProvider')}
@@ -120,7 +123,7 @@ export function Partners() {
             </div>
           </div>
           
-          <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
             <div className="relative group">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 dark:group-focus-within:text-indigo-400 transition-colors" />
               <input 
@@ -161,12 +164,12 @@ export function Partners() {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="cursor-pointer" onClick={() => handleEdit('provider', provider)}>
+                          <DropdownMenuItem disabled={!isOnline} className="cursor-pointer" onClick={() => isOnline && handleEdit('provider', provider)}>
                             <Edit className="w-4 h-4 mr-2" />
                             {t('common.edit')}
                           </DropdownMenuItem>
                           {currentUser?.role === 'manager' && (
-                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleRequestDeleteProvider(provider.id, provider.name)}>
+                          <DropdownMenuItem disabled={!isOnline} className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => isOnline && handleRequestDeleteProvider(provider.id, provider.name)}>
                             <Trash2 className="w-4 h-4 mr-2" />
                             {t('common.delete')}
                           </DropdownMenuItem>
@@ -182,8 +185,8 @@ export function Partners() {
         </div>
 
         {/* Customers Section */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col h-[500px] lg:h-full">
-          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/30 dark:bg-slate-800/30">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col h-[420px] lg:h-full min-h-0">
+          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/30 dark:bg-slate-800/30 shrink-0">
             <div className="flex items-center space-x-3">
                <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
                  <User className="w-4 h-4" />
@@ -196,7 +199,8 @@ export function Partners() {
               </span>
               <button 
                 onClick={() => setActiveModal('customer')}
-                className="flex items-center px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-xs shadow-sm transition-all"
+                disabled={!isOnline}
+                className="flex items-center px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium text-xs shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-3 h-3 mr-1.5" />
                 {t('partners.addCustomer')}
@@ -204,7 +208,7 @@ export function Partners() {
             </div>
           </div>
 
-           <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+           <div className="p-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
             <div className="relative group">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 group-focus-within:text-purple-500 dark:group-focus-within:text-purple-400 transition-colors" />
               <input 
@@ -251,12 +255,12 @@ export function Partners() {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="cursor-pointer" onClick={() => handleEdit('customer', customer)}>
+                          <DropdownMenuItem disabled={!isOnline} className="cursor-pointer" onClick={() => isOnline && handleEdit('customer', customer)}>
                             <Edit className="w-4 h-4 mr-2" />
                             {t('common.edit')}
                           </DropdownMenuItem>
                           {currentUser?.role === 'manager' && (
-                          <DropdownMenuItem className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => handleRequestDeleteCustomer(customer.id, customer.name)}>
+                          <DropdownMenuItem disabled={!isOnline} className="text-rose-600 focus:text-rose-600 cursor-pointer" onClick={() => isOnline && handleRequestDeleteCustomer(customer.id, customer.name)}>
                             <Trash2 className="w-4 h-4 mr-2" />
                             {t('common.delete')}
                           </DropdownMenuItem>

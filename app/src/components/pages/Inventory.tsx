@@ -14,6 +14,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { useStore } from '../../lib/StoreContext';
+import { useConnection } from '../../lib/ConnectionContext';
 import { AddProductDialog } from '../modals/AddProductDialog';
 import { CategoriesDialog } from '../modals/CategoriesDialog';
 import { api } from '../../lib/api';
@@ -52,6 +53,7 @@ import { Switch } from '../ui/switch';
 
 export function Inventory() {
   const { products, categories, stockBatches, isLoading, refresh, currentUser } = useStore();
+  const { isOnline } = useConnection();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'products' | 'batches'>('products');
 
@@ -136,14 +138,16 @@ export function Inventory() {
           <div className="flex space-x-3">
             <button 
               onClick={() => setIsCategoriesOpen(true)}
-              className="flex items-center px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 font-medium text-sm transition-all shadow-sm"
+              disabled={!isOnline}
+              className="flex items-center px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 font-medium text-sm transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Tag className="w-4 h-4 mr-2 text-slate-500" />
               {t('inventory.categories')}
             </button>
             <button 
               onClick={() => setIsAddProductOpen(true)}
-              className="flex items-center px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium text-sm shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5"
+              disabled={!isOnline}
+              className="flex items-center px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium text-sm shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               <Plus className="w-4 h-4 mr-2" />
               {t('inventory.addProduct')}
@@ -310,7 +314,8 @@ export function Inventory() {
                 filters={filters}
                 includeOutOfStock={includeOutOfStock}
                 onEdit={handleEditProduct} 
-                onDelete={isManager ? handleRequestDeleteProduct : undefined}
+                onDelete={isOnline && isManager ? handleRequestDeleteProduct : undefined}
+                readOnly={!isOnline}
             />
           ) : (
             <BatchesTable 
@@ -353,10 +358,10 @@ export function Inventory() {
   );
 }
 
-function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelete }: { searchTerm: string, filters: any, includeOutOfStock: boolean, onEdit: (p: any) => void, onDelete?: (product: { id: string; name: string }) => void }) {
+function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelete, readOnly }: { searchTerm: string, filters: any, includeOutOfStock: boolean, onEdit: (p: any) => void, onDelete?: (product: { id: string; name: string }) => void; readOnly?: boolean }) {
   const { products, categories, stockBatches, currentUser } = useStore();
   const { t } = useTranslation();
-  const showActions = currentUser?.role !== 'staff';
+  const showActions = !readOnly && currentUser?.role !== 'staff';
   const canDelete = !!onDelete;
 
   const getTotalStock = (productId: string) =>
