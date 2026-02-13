@@ -46,6 +46,7 @@
     "totalInventory": "Inventaire Total",
     "itemsInStock": "Articles en stock",
     "totalRevenue": "Revenu Total",
+    "pendingPayments": "Paiements en attente ({{count}})",
     "totalStockValue": "Valeur totale du stock",
     "totalStockValueSubtitle": "Stock actuel au prix de base",
     "currentFiscalYear": "Année fiscale en cours",
@@ -475,6 +476,7 @@
     "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet(te) {{item}} ? Cette action est irréversible.",
     "unknown": "Inconnu",
     "allOptions": "Tous",
+    "products": "Produits",
     "error": "Une erreur est survenue"
   }
 }

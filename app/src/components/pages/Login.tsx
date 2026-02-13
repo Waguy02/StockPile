@@ -107,15 +107,15 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-50/90 via-slate-100 to-violet-50/90 dark:from-slate-950 dark:via-[#0f172a] dark:to-indigo-950/90 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#0f172a] relative overflow-hidden">
       {/* Subtle radial glow behind card for depth */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(199,210,254,0.2),transparent)] dark:bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(79,70,229,0.15),transparent)] pointer-events-none" aria-hidden />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(79,70,229,0.12),transparent)] pointer-events-none" aria-hidden />
       {/* Large background logo */}
-      <img src="/odicam_logo.png" alt="" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(100vw,800px)] h-[min(100vh,800px)] scale-[2] object-contain opacity-30 blur-[2px] pointer-events-none select-none z-0" aria-hidden />
+      <img src="./odicam_logo.png" alt="" className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(100vw,800px)] h-[min(100vh,800px)] scale-[2] object-contain opacity-[0.02] blur-[2px] pointer-events-none select-none z-0" aria-hidden />
       <div className="w-full max-w-md bg-[#0B1121] rounded-2xl shadow-2xl shadow-slate-900/20 dark:shadow-black/40 border border-slate-800/50 overflow-hidden relative z-10">
         <div className="p-8">
           <div className="flex flex-col items-center mb-8">
-            <img src="/odicam_logo_with_text.png" alt="Odicam - Gestion de Stock" className="w-full max-w-[220px] h-auto object-contain mb-4" />
+            <img src="./odicam_logo_with_text.png" alt="Odicam - Gestion de Stock" className="w-full max-w-[220px] h-auto object-contain mb-4" />
             <p className="text-slate-400 text-sm">{t('login.signInToAccount', { defaultValue: 'Sign in to your account' })}</p>
           </div>
 

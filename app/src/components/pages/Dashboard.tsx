@@ -283,7 +283,11 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
   };
 
   const totalStockCount = relevantBatches.reduce((acc, batch) => acc + batch.quantity, 0);
-  const filteredSalesRevenue = getFilteredSales().reduce((acc, sale) => acc + sale.totalAmount, 0);
+  const filteredSales = getFilteredSales();
+  const filteredSalesRevenue = filteredSales.reduce((acc, sale) => acc + sale.totalAmount, 0);
+  const filteredPaidRevenue = filteredSales.reduce((acc, sale) => acc + (sale.amountPaid || 0), 0);
+  const filteredPendingPayments = filteredSalesRevenue - filteredPaidRevenue;
+  const pendingPaymentCount = filteredSales.filter(s => s.totalAmount > (s.amountPaid || 0)).length;
   const lowStockItems = relevantBatches.filter(b => b.quantity < 10).length;
   const pendingOrders = relevantOrders.filter(p => p.status === 'pending').length;
 
@@ -336,7 +340,9 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
         head: [[t('dashboard.reportMetric'), t('dashboard.reportValue')]],
         body: [
             [t('dashboard.totalStockItems'), String(totalStockCount)],
-            [t('dashboard.totalRevenueSelectedPeriod'), formatCurrency(filteredSalesRevenue)],
+            [t('dashboard.totalStockValue'), formatCurrency(totalStockValue)],
+            [t('dashboard.totalRevenueSelectedPeriod'), formatCurrency(filteredPaidRevenue)],
+            [t('dashboard.pendingPayments'), formatCurrency(filteredPendingPayments)],
             [t('dashboard.lowStock'), String(lowStockItems)],
             [t('dashboard.pendingOrders'), String(pendingOrders)]
         ],
@@ -431,10 +437,11 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
         />
         <StatCard 
           title={t('dashboard.totalRevenue')}
-          value={formatCurrency(filteredSalesRevenue)} 
+          value={formatCurrency(filteredPaidRevenue)} 
+          secondaryLine={filteredPendingPayments > 0 ? `${t('dashboard.pendingPayments', { count: pendingPaymentCount })}: ${formatCurrency(filteredPendingPayments)}` : undefined}
           subtitle={getDateRangeLabel()}
           icon={DollarSign}
-          trend="+8.2%"
+          trend={`+${((filteredPaidRevenue / Math.max(filteredSalesRevenue, 1)) * 100).toFixed(1)}%`}
           trendUp={true}
           variant="green"
           onClick={() => onNavigate('finance')}
@@ -820,7 +827,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
   );
 }
 
-function StatCard({ title, value, secondaryValue, subtitle, icon: Icon, trend, trendUp, variant, onClick }: any) {
+function StatCard({ title, value, secondaryValue, secondaryLine, subtitle, icon: Icon, trend, trendUp, variant, onClick }: any) {
   const styles: any = {
     blue: { bg: "bg-blue-500", text: "text-blue-600 dark:text-blue-400", light: "bg-blue-50 dark:bg-blue-900/20" },
     green: { bg: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", light: "bg-emerald-50 dark:bg-emerald-900/20" },
@@ -841,8 +848,8 @@ function StatCard({ title, value, secondaryValue, subtitle, icon: Icon, trend, t
         <div>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
           <h3 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mt-2 tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{value}</h3>
-          {secondaryValue != null && secondaryValue !== '' && !subtitle && (
-            <p className="text-xl font-semibold text-slate-600 dark:text-slate-300 mt-1.5 tabular-nums">{secondaryValue}</p>
+          {secondaryLine != null && secondaryLine !== '' && (
+            <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 mt-1.5 tabular-nums">{secondaryLine}</p>
           )}
         </div>
         <div className={`p-3.5 rounded-xl ${s.light} group-hover:scale-110 transition-transform duration-300 shrink-0`}>

@@ -46,6 +46,7 @@
     "totalInventory": "Total Inventory",
     "itemsInStock": "Items in stock",
     "totalRevenue": "Total Revenue",
+    "pendingPayments": "Pending payments ({{count}})",
     "totalStockValue": "Total stock value",
     "totalStockValueSubtitle": "Current stock at base price",
     "currentFiscalYear": "Current fiscal year",
@@ -467,6 +468,7 @@
     "confirmDelete": "Are you sure you want to delete this {{item}}? This action cannot be undone.",
     "unknown": "Unknown",
     "allOptions": "All",
+    "products": "Products",
     "error": "An error occurred"
   }
 }

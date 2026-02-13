@@ -70,7 +70,7 @@ function AppContent() {
   return (
     <Layout currentView={currentView} onNavigate={setCurrentView}>
       {renderView()}
-      <Toaster />
+      <Toaster position="bottom-right" />
     </Layout>
   );
 }

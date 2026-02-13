@@ -54,7 +54,7 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
       {/* Sidebar - Desktop */}
       <aside className="hidden md:flex flex-col w-72 bg-[#0B1121] dark:bg-slate-900 text-white border-r border-slate-800/50 shadow-2xl z-20">
         <div className="p-8">
-          <img src="/odicam_logo_with_text.png" alt="Odicam - Gestion de Stock" className="w-full max-w-[200px] h-auto object-contain" />
+          <img src="./odicam_logo_with_text.png" alt="Odicam - Gestion de Stock" className="w-full max-w-[200px] h-auto object-contain" />
         </div>
         
         <nav className="flex-1 overflow-y-auto px-4 py-4">
@@ -125,7 +125,7 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
             
              {/* Logo with text (mobile) / Breadcrumbs (Desktop) */}
             <div className="flex items-center min-w-0">
-                <img src="/odicam_logo.png" alt="Odicam" className="md:hidden h-10 w-auto object-contain object-left" />
+                <img src="./odicam_logo.png" alt="Odicam" className="md:hidden h-10 w-auto object-contain object-left" />
                 <div className="hidden md:flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                     <span onClick={() => currentView === 'activity' && onNavigate('dashboard')} className={`${currentView === 'activity' ? 'cursor-pointer hover:text-slate-900 dark:hover:text-white' : ''} transition-colors`}>{t('shell.app')}</span>
                     <ChevronRight className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
@@ -185,7 +185,7 @@ export function Layout({ children, currentView, onNavigate }: LayoutProps) {
           <div className="flex h-full flex-col">
             <div className="p-6 flex items-center justify-between border-b border-white/10">
               <div className="flex-1 min-w-0">
-                <img src="/odicam_logo_with_text.png" alt="Odicam - Gestion de Stock" className="max-h-10 w-auto object-contain object-left" />
+                <img src="./odicam_logo_with_text.png" alt="Odicam - Gestion de Stock" className="max-h-10 w-auto object-contain object-left" />
               </div>
               <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-white transition-colors">
                 <Menu className="w-6 h-6" />

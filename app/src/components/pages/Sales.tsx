@@ -45,6 +45,12 @@ import {
   SelectValue,
 } from '../ui/select';
 import { Badge } from '../ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 
 export function Sales() {
   const { sales, customers, managers, products, isLoading, refresh, currentUser } = useStore();
@@ -53,6 +59,7 @@ export function Sales() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<any>(null);
   const [saleToDelete, setSaleToDelete] = useState<any>(null);
+  const [productsDialogItems, setProductsDialogItems] = useState<any[] | null>(null);
   
   // Filters state
   const [searchTerm, setSearchTerm] = useState('');
@@ -200,7 +207,11 @@ export function Sales() {
           </Badge>
         ))}
         {remainingCount > 0 && (
-          <Badge variant="secondary" className="text-xs">
+          <Badge
+            variant="secondary"
+            className="text-xs cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30 hover:text-indigo-700 dark:hover:text-indigo-400 transition-colors"
+            onClick={(e) => { e.stopPropagation(); setProductsDialogItems(items); }}
+          >
             +{remainingCount}
           </Badge>
         )}
@@ -574,6 +585,33 @@ export function Sales() {
           </div>
         )}
       </div>
+
+      {/* Products list dialog */}
+      <Dialog open={!!productsDialogItems} onOpenChange={(open) => !open && setProductsDialogItems(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('common.products', { defaultValue: 'Products' })}</DialogTitle>
+          </DialogHeader>
+          <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[60vh] overflow-y-auto -mx-6 px-6">
+            {(productsDialogItems || []).map((item: any, idx: number) => (
+              <div key={idx} className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0">
+                    {idx + 1}
+                  </div>
+                  <span className="font-medium text-slate-900 dark:text-slate-100 truncate">{getProductName(item.productId)}</span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0 ml-4">
+                  <span className="text-sm text-slate-500 dark:text-slate-400">x{item.quantity}</span>
+                  {item.unitPrice != null && (
+                    <span className="text-sm font-mono text-slate-600 dark:text-slate-300">{formatCurrency(Number(item.unitPrice) * Number(item.quantity))}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -13,10 +13,16 @@ if (require('electron-squirrel-startup')) {
 }
 
 const createWindow = () => {
+  // Resolve icon path: public/ in dev, dist/ in packaged build
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'app.asar', 'dist', 'odicam_logo.png')
+    : path.join(__dirname, '../public/odicam_logo.png');
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true,

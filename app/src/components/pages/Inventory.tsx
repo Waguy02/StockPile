@@ -688,7 +688,7 @@ function BatchesTable({ searchTerm, filters }: { searchTerm: string, filters: an
         (!filters.endDate || batchDate <= new Date(filters.endDate + 'T23:59:59.999Z'));
 
     return matchesSearch && matchesDate;
-  }), [stockBatches, searchTerm, filters]);
+  }).sort((a, b) => new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime()), [stockBatches, searchTerm, filters]);
 
   // Reset page when filters change
   React.useEffect(() => { setPage(1); }, [searchTerm, filters.startDate, filters.endDate]);

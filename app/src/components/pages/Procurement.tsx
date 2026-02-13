@@ -45,6 +45,13 @@ import {
 } from '../ui/popover';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
+import { Badge } from '../ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 
 const PAGE_SIZE = 20;
 
@@ -55,6 +62,7 @@ export function Procurement() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [orderToDelete, setOrderToDelete] = useState<any>(null);
+  const [productsDialogItems, setProductsDialogItems] = useState<any[] | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     startDate: '',
@@ -177,6 +185,31 @@ const invoiceI18n = {
 
   const getProductName = (id: string) =>
     (products || []).find((p: { id: string }) => p.id === id)?.name ?? t('common.unknown');
+
+  const getProductsDisplay = (items: any[]) => {
+    if (!items || items.length === 0) return '-';
+    const displayItems = items.slice(0, 2);
+    const remainingCount = items.length - 2;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {displayItems.map((item: any, idx: number) => (
+          <Badge key={idx} variant="outline" className="text-xs font-normal bg-slate-50 dark:bg-slate-800/50">
+            {getProductName(item.productId)}
+            {item.quantity > 1 && <span className="ml-1 text-slate-400">x{item.quantity}</span>}
+          </Badge>
+        ))}
+        {remainingCount > 0 && (
+          <Badge
+            variant="secondary"
+            className="text-xs cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30 hover:text-indigo-700 dark:hover:text-indigo-400 transition-colors"
+            onClick={(e) => { e.stopPropagation(); setProductsDialogItems(items); }}
+          >
+            +{remainingCount}
+          </Badge>
+        )}
+      </div>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -320,6 +353,7 @@ const invoiceI18n = {
                 <tr>
                   <th className="px-6 py-4">{t('procurement.table.orderId')}</th>
                   <th className="px-6 py-4">{t('procurement.table.provider')}</th>
+                  <th className="px-6 py-4">{t('common.products', { defaultValue: 'Products' })}</th>
                   <th className="px-6 py-4">{t('procurement.table.date')}</th>
                   <th className="px-6 py-4">{t('procurement.table.totalAmount')}</th>
                   <th className="px-6 py-4">{t('procurement.table.paymentProgress')}</th>
@@ -330,7 +364,7 @@ const invoiceI18n = {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {sortedPurchaseOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                    <td colSpan={8} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                       {t('procurement.empty', { defaultValue: 'No purchase orders yet' })}
                     </td>
                   </tr>
@@ -348,6 +382,9 @@ const invoiceI18n = {
                       <td className="px-6 py-4">
                         <div className="font-semibold text-slate-900 dark:text-slate-100">{getProviderName(po.providerId)}</div>
                         <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">{t('procurement.reqBy', { name: getManagerName(po.managerId) })}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {getProductsDisplay(po.items || [])}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center text-slate-500 dark:text-slate-400">
@@ -464,6 +501,11 @@ const invoiceI18n = {
                       <Calendar className="w-4 h-4 mr-2 shrink-0 text-slate-400 dark:text-slate-500" />
                       {formatDateForDisplay(po.initiationDate)}
                     </div>
+                    {(po.items || []).length > 0 && (
+                      <div className="text-sm text-slate-500 dark:text-slate-400">
+                        {getProductsDisplay(po.items || [])}
+                      </div>
+                    )}
                     <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
                       <div className="flex justify-between items-end mb-2">
                         <p className="font-mono font-medium text-slate-900 dark:text-slate-100">{formatCurrency(po.totalAmount)}</p>
@@ -525,6 +567,33 @@ const invoiceI18n = {
           </div>
         )}
       </div>
+
+      {/* Products list dialog */}
+      <Dialog open={!!productsDialogItems} onOpenChange={(open) => !open && setProductsDialogItems(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('common.products', { defaultValue: 'Products' })}</DialogTitle>
+          </DialogHeader>
+          <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[60vh] overflow-y-auto -mx-6 px-6">
+            {(productsDialogItems || []).map((item: any, idx: number) => (
+              <div key={idx} className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0">
+                    {idx + 1}
+                  </div>
+                  <span className="font-medium text-slate-900 dark:text-slate-100 truncate">{getProductName(item.productId)}</span>
+                </div>
+                <div className="flex items-center gap-3 shrink-0 ml-4">
+                  <span className="text-sm text-slate-500 dark:text-slate-400">x{item.quantity}</span>
+                  {item.unitPrice != null && (
+                    <span className="text-sm font-mono text-slate-600 dark:text-slate-300">{formatCurrency(Number(item.unitPrice) * Number(item.quantity))}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

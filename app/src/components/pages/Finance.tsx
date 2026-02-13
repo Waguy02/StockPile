@@ -25,7 +25,7 @@ import {
 } from '../ui/select';
 
 export function Finance() {
-  const { payments, managers, currentUser, isLoading, products, stockBatches } = useStore();
+  const { payments, sales, managers, currentUser, isLoading, products, stockBatches } = useStore();
   const { t, i18n } = useTranslation();
   const [timeRange, setTimeRange] = useState('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'sale' | 'purchase_order'>('all');
@@ -67,6 +67,9 @@ export function Finance() {
   const filteredPayments = getFilteredPayments();
   const totalInflow = filteredPayments.filter(p => p.referenceType === 'sale').reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
   const totalOutflow = filteredPayments.filter(p => p.referenceType === 'purchase_order').reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+
+  const salesWithPending = sales.filter(s => s.totalAmount > (s.amountPaid || 0));
+  const totalPendingPayments = salesWithPending.reduce((acc, s) => acc + (s.totalAmount - (s.amountPaid || 0)), 0);
 
   const searchFilteredPayments = React.useMemo(() => {
     if (!searchTerm.trim()) return filteredPayments;
@@ -247,6 +250,11 @@ export function Finance() {
           <div>
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.totalRevenue')}</p>
             <h3 className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 tracking-tight tabular-nums group-hover:scale-105 transition-transform origin-left">+{formatCurrency(totalInflow)}</h3>
+            {totalPendingPayments > 0 && (
+              <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 mt-1.5 tabular-nums">
+                {t('dashboard.pendingPayments', { count: salesWithPending.length })}: {formatCurrency(totalPendingPayments)}
+              </p>
+            )}
           </div>
           <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-xl">
             <ArrowUpRight className="w-6 h-6" />
