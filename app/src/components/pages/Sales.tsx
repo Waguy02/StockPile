@@ -172,7 +172,7 @@ export function Sales() {
   });
 
   const sortedSales = React.useMemo(
-    () => [...filteredSales].sort((a, b) => (b.initiationDate || '').localeCompare(a.initiationDate || '')),
+    () => [...filteredSales].sort((a, b) => new Date(b.initiationDate || 0).getTime() - new Date(a.initiationDate || 0).getTime()),
     [filteredSales]
   );
 
@@ -368,7 +368,7 @@ export function Sales() {
                   <th className="px-6 py-4 text-right">{t('sales.table.actions')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                 {sortedSales.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="px-6 py-16 text-center text-slate-500 dark:text-slate-400 text-sm">
@@ -524,7 +524,7 @@ export function Sales() {
                         {formatDateForDisplay(sale.initiationDate)}
                       </div>
                     </div>
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
                       <div className="flex justify-between items-end mb-2">
                         <p className="font-mono font-medium text-slate-900 dark:text-slate-100">{formatCurrency(sale.totalAmount)}</p>
                         <div className="text-right">
@@ -592,7 +592,7 @@ export function Sales() {
           <DialogHeader>
             <DialogTitle>{t('common.products', { defaultValue: 'Products' })}</DialogTitle>
           </DialogHeader>
-          <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[60vh] overflow-y-auto -mx-6 px-6">
+          <div className="divide-y divide-slate-200 dark:divide-slate-700 max-h-[60vh] overflow-y-auto -mx-6 px-6">
             {(productsDialogItems || []).map((item: any, idx: number) => (
               <div key={idx} className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3 min-w-0">

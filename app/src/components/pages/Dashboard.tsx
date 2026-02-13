@@ -191,7 +191,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
         responsibleName: respName(mid),
       });
     });
-    return items.sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 4);
+    return items.sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()).slice(0, 4);
   }, [sales, purchaseOrders, stockBatches, payments, customers, providers, managers, currentUser, t]);
 
   // --- Derived Data for New Charts ---

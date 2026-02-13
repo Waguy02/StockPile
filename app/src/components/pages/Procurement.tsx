@@ -111,7 +111,7 @@ export function Procurement() {
   }, [filteredOrders, searchTerm, providers]);
 
   const sortedPurchaseOrders = useMemo(
-    () => [...searchFilteredOrders].sort((a, b) => (b.initiationDate || '').localeCompare(a.initiationDate || '')),
+    () => [...searchFilteredOrders].sort((a, b) => new Date(b.initiationDate || 0).getTime() - new Date(a.initiationDate || 0).getTime()),
     [searchFilteredOrders]
   );
 
@@ -361,7 +361,7 @@ const invoiceI18n = {
                   <th className="px-6 py-4 text-right">{t('procurement.table.actions')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                 {sortedPurchaseOrders.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
@@ -506,7 +506,7 @@ const invoiceI18n = {
                         {getProductsDisplay(po.items || [])}
                       </div>
                     )}
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
                       <div className="flex justify-between items-end mb-2">
                         <p className="font-mono font-medium text-slate-900 dark:text-slate-100">{formatCurrency(po.totalAmount)}</p>
                         <div className="text-right">
@@ -574,7 +574,7 @@ const invoiceI18n = {
           <DialogHeader>
             <DialogTitle>{t('common.products', { defaultValue: 'Products' })}</DialogTitle>
           </DialogHeader>
-          <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[60vh] overflow-y-auto -mx-6 px-6">
+          <div className="divide-y divide-slate-200 dark:divide-slate-700 max-h-[60vh] overflow-y-auto -mx-6 px-6">
             {(productsDialogItems || []).map((item: any, idx: number) => (
               <div key={idx} className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3 min-w-0">

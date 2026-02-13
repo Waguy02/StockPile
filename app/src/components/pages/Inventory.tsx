@@ -14,7 +14,8 @@ import {
   Calendar,
   Download,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  History
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -22,6 +23,7 @@ import { useStore } from '../../lib/StoreContext';
 import { useConnection } from '../../lib/ConnectionContext';
 import { AddProductDialog } from '../modals/AddProductDialog';
 import { CategoriesDialog } from '../modals/CategoriesDialog';
+import { ProductHistory } from './ProductHistory';
 import { api } from '../../lib/api';
 import { formatCurrency, formatDateForDisplay } from '../../lib/formatters';
 import { savePdf } from '../../lib/downloadPdf';
@@ -84,6 +86,7 @@ export function Inventory() {
   });
   const [includeOutOfStock, setIncludeOutOfStock] = useState(false);
   const [productToDelete, setProductToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [historyProduct, setHistoryProduct] = useState<any>(null);
 
   const clearFilters = () => {
     setFilters({
@@ -224,6 +227,11 @@ export function Inventory() {
         <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
       </div>
     );
+  }
+
+  // Product History sub-view
+  if (historyProduct) {
+    return <ProductHistory product={historyProduct} onBack={() => setHistoryProduct(null)} />;
   }
 
   return (
@@ -423,6 +431,7 @@ export function Inventory() {
                 includeOutOfStock={includeOutOfStock}
                 onEdit={handleEditProduct} 
                 onDelete={isOnline && isManager ? handleRequestDeleteProduct : undefined}
+                onHistory={setHistoryProduct}
                 readOnly={!isOnline}
             />
           ) : (
@@ -459,7 +468,7 @@ export function Inventory() {
   );
 }
 
-function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelete, readOnly }: { searchTerm: string, filters: any, includeOutOfStock: boolean, onEdit: (p: any) => void, onDelete?: (product: { id: string; name: string }) => void; readOnly?: boolean }) {
+function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelete, onHistory, readOnly }: { searchTerm: string, filters: any, includeOutOfStock: boolean, onEdit: (p: any) => void, onDelete?: (product: { id: string; name: string }) => void; onHistory?: (p: any) => void; readOnly?: boolean }) {
   const { products, categories, stockBatches, currentUser } = useStore();
   const { t } = useTranslation();
   const showActions = !readOnly && currentUser?.role !== 'staff';
@@ -516,7 +525,7 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
             {showActions && <th className="px-6 py-4 text-right">{t('inventory.table.actions')}</th>}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
           {paginatedProducts.map((product) => {
             const totalStock = getTotalStock(product.id);
             const lineStockValue = totalStock * product.baseUnitPrice;
@@ -549,6 +558,12 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
                             </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                            {onHistory && (
+                            <DropdownMenuItem className="cursor-pointer" onClick={() => onHistory(product)}>
+                                <History className="w-4 h-4 mr-2" />
+                                {t('productHistory.menuLabel')}
+                            </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem className="cursor-pointer" onClick={() => onEdit(product)}>
                                 <Edit className="w-4 h-4 mr-2" />
                                 {t('common.edit')}
@@ -571,7 +586,7 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
     </div>
 
     {/* Mobile List View */}
-    <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+    <div className="md:hidden divide-y divide-slate-200 dark:divide-slate-700">
       {paginatedProducts.map((product) => {
         const totalStock = stockBatches
           .filter(b => b.productId === product.id)
@@ -593,6 +608,12 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
                           </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                          {onHistory && (
+                          <DropdownMenuItem className="cursor-pointer" onClick={() => onHistory(product)}>
+                              <History className="w-4 h-4 mr-2" />
+                              {t('productHistory.menuLabel')}
+                          </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem className="cursor-pointer" onClick={() => onEdit(product)}>
                               <Edit className="w-4 h-4 mr-2" />
                               {t('common.edit')}
@@ -614,7 +635,7 @@ function ProductsTable({ searchTerm, filters, includeOutOfStock, onEdit, onDelet
                 </span>
              </div>
 
-             <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
+             <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700">
                 <div className="font-mono font-medium text-slate-700 dark:text-slate-300">
                     {formatCurrency(product.baseUnitPrice)}
                 </div>
@@ -726,7 +747,7 @@ function BatchesTable({ searchTerm, filters }: { searchTerm: string, filters: an
             <th className="px-6 py-4">{t('inventory.table.quantity')}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
           {paginatedBatches.map((batch) => (
             <tr key={batch.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
               <td className="px-6 py-4">
@@ -754,7 +775,7 @@ function BatchesTable({ searchTerm, filters }: { searchTerm: string, filters: an
     </div>
 
     {/* Mobile Batches List */}
-    <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+    <div className="md:hidden divide-y divide-slate-200 dark:divide-slate-700">
       {paginatedBatches.map((batch) => (
         <div key={batch.id} className="p-4 space-y-3">
            <div className="flex justify-between items-start">
@@ -775,7 +796,7 @@ function BatchesTable({ searchTerm, filters }: { searchTerm: string, filters: an
               </span>
            </div>
 
-           <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
+           <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700">
               <div className="font-mono font-medium text-slate-700 dark:text-slate-300">{formatCurrency(batch.unitPriceCost)}</div>
               <div className="flex items-center text-sm">
                   <div className={`w-1.5 h-1.5 rounded-full mr-2 ${batch.quantity < 10 ? 'bg-rose-500' : 'bg-slate-300 dark:bg-slate-600'}`}></div>

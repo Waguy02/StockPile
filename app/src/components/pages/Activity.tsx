@@ -182,7 +182,21 @@ export function Activity() {
         managerId: p.managerId,
       });
     });
-    return items.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    // Sort by date descending – use numeric timestamp comparison so that
+    // full ISO datetimes (with time) and date-only strings both sort correctly.
+    // For items on the exact same second / date-only day, use a stable tiebreaker
+    // based on a logical event-type order (payment > sale > batch > PO).
+    const typePriority: Record<string, number> = {
+      paymentIn: 0, paymentOut: 1, sale: 2, saleUpdated: 3,
+      batch: 4, stockReceived: 5, purchaseOrder: 6,
+    };
+    return items.sort((a, b) => {
+      const ta = new Date(a.date || 0).getTime();
+      const tb = new Date(b.date || 0).getTime();
+      if (tb !== ta) return tb - ta;
+      // Same timestamp – most recent event type first
+      return (typePriority[a.type] ?? 99) - (typePriority[b.type] ?? 99);
+    });
   }, [sales, purchaseOrders, stockBatches, payments, customers, providers, products, t]);
 
   const filteredItems = useMemo(() => {
@@ -307,7 +321,7 @@ export function Activity() {
                   <th className="px-6 py-4 w-36">{t('activity.tableResponsible')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                 {paginatedItems.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
@@ -366,7 +380,7 @@ export function Activity() {
                       <span className="text-xs font-medium text-slate-500 dark:text-slate-500 uppercase tracking-wider">{t('activity.tableProducts')}: </span>
                       <span className="block mt-1">{item.productsItems?.length ? renderProductsBadges(item.productsItems) : (item.productsDetail ?? '—')}</span>
                     </div>
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-sm text-slate-500 dark:text-slate-400">
+                    <div className="pt-3 border-t border-slate-200 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400">
                       <span className="font-medium text-slate-600 dark:text-slate-400">{t('activity.tableResponsible')}: </span>
                       {getManagerName(item.managerId)}
                     </div>

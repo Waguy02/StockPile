@@ -164,7 +164,7 @@ export function Admin() {
                   <th className="px-6 py-4 text-right"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                 {userList.map((manager, idx) => (
                   <tr key={manager.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
                     <td className="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100">{manager.name}</td>
@@ -230,7 +230,7 @@ export function Admin() {
             </table>
 
             {/* Mobile User List */}
-            <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+            <div className="md:hidden divide-y divide-slate-200 dark:divide-slate-700">
                 {userList.map((manager) => (
                     <div key={manager.id} className="p-4 flex items-center justify-between">
                         <div>

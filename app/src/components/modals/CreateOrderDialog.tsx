@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { toast } from "sonner";
 import { useQueryClient } from '@tanstack/react-query';
 import { useStore } from '../../lib/StoreContext';
@@ -152,7 +153,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
             paymentStatus: Number(data.amountPaid) >= Number(data.totalAmount),
             status: data.status,
             notes: data.notes,
-            initiationDate: order?.initiationDate || new Date().toISOString().split('T')[0],
+            initiationDate: order?.initiationDate || new Date().toISOString(),
             items: validItems.map((i: any) => ({
                 productId: i.productId,
                 quantity: Number(i.quantity),
@@ -191,7 +192,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                                     quantity: item.quantity,
                                     unitPriceCost: item.unitPrice,
                                     batchLabel: `PO-${order.id.slice(0, 8)}`,
-                                    entryDate: new Date().toISOString().split('T')[0],
+                                    entryDate: new Date().toISOString(),
                                     status: 'active'
                                 });
                                 batchesCreated++;
@@ -228,7 +229,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                                     quantity: item.quantity,
                                     unitPriceCost: item.unitPrice,
                                     batchLabel: `PO-${newPO.id.slice(0, 8)}`,
-                                    entryDate: new Date().toISOString().split('T')[0],
+                                    entryDate: new Date().toISOString(),
                                     status: 'active'
                                 });
                             } catch (err) {
@@ -291,28 +292,25 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
             <FormField
               control={form.control}
               name="partnerId"
-              render={({ field }) => (
+              render={({ field }) => {
+                const partnerList = type === 'purchase' ? providers : customers;
+                const placeholder = type === 'purchase'
+                  ? t('modals.createOrder.selectProviderPlaceholder', { defaultValue: 'Sélectionner un fournisseur' })
+                  : t('modals.createOrder.selectCustomerPlaceholder', { defaultValue: 'Sélectionner un client' });
+                return (
                 <FormItem>
                   <FormLabel>{type === 'purchase' ? t('modals.createOrder.providerLabel') : t('modals.createOrder.customerLabel')}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={type === 'purchase' ? t('modals.createOrder.selectProviderPlaceholder', { defaultValue: 'Select a provider' }) : t('modals.createOrder.selectCustomerPlaceholder', { defaultValue: 'Select a customer' })} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {type === 'purchase'
-                        ? providers.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                          ))
-                        : customers.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                          ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <SearchableSelect
+                      options={partnerList.map((p) => ({ value: p.id, label: p.name }))}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder={placeholder}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
-              )}
+              );}}
             />
 
             <div className="space-y-2">
@@ -347,27 +345,21 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                     render={({ field }) => (
                       <FormItem className="flex-1 w-full">
                         <FormLabel className="text-xs">{t('modals.createOrder.productLabel')}</FormLabel>
-                        <Select
-                          onValueChange={(val) => {
-                            field.onChange(val);
-                            const prod = products.find(p => p.id === val);
-                            if (prod && type === 'sale') {
-                              form.setValue(`items.${index}.unitPrice`, prod.baseUnitPrice.toString());
-                            }
-                          }}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder={t('modals.createOrder.selectProduct')} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {products.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <SearchableSelect
+                            options={products.map((p) => ({ value: p.id, label: p.name }))}
+                            value={field.value}
+                            onChange={(val) => {
+                              field.onChange(val);
+                              const prod = products.find(pr => pr.id === val);
+                              if (prod && type === 'sale') {
+                                form.setValue(`items.${index}.unitPrice`, prod.baseUnitPrice.toString());
+                              }
+                            }}
+                            placeholder={t('modals.createOrder.selectProduct')}
+                            triggerClassName="h-9 text-sm"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

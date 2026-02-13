@@ -143,7 +143,7 @@ export function Partners() {
                   <th className="px-5 py-3 text-right"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                 {providers.map(provider => (
                   <tr key={provider.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
                     <td className="px-5 py-3.5 font-semibold text-slate-900 dark:text-slate-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors">{provider.name}</td>
@@ -228,7 +228,7 @@ export function Partners() {
                   <th className="px-5 py-3 text-right"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                 {customers.map(customer => (
                   <tr key={customer.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
                     <td className="px-5 py-3.5">

@@ -85,7 +85,7 @@ export function Finance() {
   }, [filteredPayments, searchTerm, t]);
 
   const sortedPayments = React.useMemo(
-    () => [...searchFilteredPayments].sort((a, b) => (b.date || '').localeCompare(a.date || '')),
+    () => [...searchFilteredPayments].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()),
     [searchFilteredPayments]
   );
 
@@ -358,7 +358,7 @@ export function Finance() {
                 <th className="px-4 lg:px-6 py-3 lg:py-4 text-right font-mono tabular-nums whitespace-nowrap">{t('finance.table.amount')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
               {paginatedPayments.map((payment) => (
                 <tr key={payment.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors group">
                   <td className="px-4 lg:px-6 py-3 lg:py-4 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatDateForDisplay(payment.date)}</td>
@@ -387,7 +387,7 @@ export function Finance() {
         </div>
 
         {/* Mobile: card list */}
-        <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800 min-h-[200px]">
+        <div className="md:hidden divide-y divide-slate-200 dark:divide-slate-700 min-h-[200px]">
           {paginatedPayments.map((p) => (
             <div key={p.id} className="p-4 flex justify-between items-start gap-3 active:bg-slate-50/80 dark:active:bg-slate-800/50">
               <div className="min-w-0 flex-1">

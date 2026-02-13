@@ -21,13 +21,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useStore } from '../../lib/StoreContext';
 import { api } from '../../lib/api';
 
@@ -133,20 +127,14 @@ export function AddProductDialog({ open, onOpenChange, product }: AddProductDial
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-slate-900 dark:text-slate-200">{t('modals.addProduct.categoryLabel')}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
-                        <SelectValue placeholder={t('modals.addProduct.categoryPlaceholder')} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id} className="text-slate-900 dark:text-slate-100 focus:bg-slate-100 dark:focus:bg-slate-800">
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <SearchableSelect
+                      options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder={t('modals.addProduct.categoryPlaceholder')}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
