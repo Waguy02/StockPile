@@ -106,6 +106,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
   }, [order, type, form]);
 
   const [isLoading, setIsLoading] = React.useState(false);
+  const isEditing = !!order;
 
   const hasAtLeastOneProduct = (watchedItems || []).some(
     (i: any) => i.productId && (parseFloat(String(i.quantity)) || 0) > 0
@@ -162,7 +163,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
             managerId,
         };
 
-        if (type === 'sale') {
+        if (type === 'sale' && !isEditing) {
             for (const item of payload.items) {
                 if (item.productId && item.quantity > 0) {
                     const available = stockBatches
@@ -306,6 +307,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                       value={field.value}
                       onChange={field.onChange}
                       placeholder={placeholder}
+                      readOnly={isEditing}
                     />
                   </FormControl>
                   <FormMessage />
@@ -316,15 +318,17 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <FormLabel>{t('modals.createOrder.itemsLabel')}</FormLabel>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => append({ productId: '', quantity: '1', unitPrice: '0' })}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t('modals.createOrder.addProduct')}
-                </Button>
+                {!isEditing && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => append({ productId: '', quantity: '1', unitPrice: '0' })}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t('modals.createOrder.addProduct')}
+                  </Button>
+                )}
               </div>
               
               <div className="max-h-[240px] overflow-y-auto space-y-4 pr-2">
@@ -358,6 +362,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                             }}
                             placeholder={t('modals.createOrder.selectProduct')}
                             triggerClassName="h-9 text-sm"
+                            readOnly={isEditing}
                           />
                         </FormControl>
                         <FormMessage />
@@ -369,7 +374,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                     <FormField
                         control={form.control}
                         name={`items.${index}.quantity`}
-                        rules={{
+                        rules={isEditing ? undefined : {
                           validate: (value) => {
                             const qty = parseFloat(String(value)) || 0;
                             if (qty < 1) return t('modals.createOrder.errors.qtyMin', { defaultValue: 'Min 1' });
@@ -380,7 +385,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                         <FormItem className="flex-1 sm:w-24">
                             <FormLabel className="text-xs">
                                 {t('modals.createOrder.qtyLabel')}
-                                {availableStock !== null && (
+                                {availableStock !== null && !isEditing && (
                                     <span className="block text-[10px] font-normal text-slate-500 whitespace-nowrap">
                                         {t('modals.createOrder.maxStock', { stock: availableStock })}
                                     </span>
@@ -391,6 +396,9 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                                 type="number" 
                                 min="1" 
                                 max={availableStock !== null ? availableStock : undefined}
+                                readOnly={isEditing}
+                                tabIndex={isEditing ? -1 : undefined}
+                                className={isEditing ? 'cursor-default focus:ring-0 focus:ring-offset-0' : ''}
                                 {...field} 
                             />
                             </FormControl>
@@ -406,22 +414,32 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                         <FormItem className="flex-1 sm:w-24">
                             <FormLabel className="text-xs">{t('modals.createOrder.priceLabel')}</FormLabel>
                             <FormControl>
-                            <Input type="number" step="0.01" min="0" {...field} />
+                            <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                readOnly={isEditing}
+                                tabIndex={isEditing ? -1 : undefined}
+                                className={isEditing ? 'cursor-default focus:ring-0 focus:ring-offset-0' : ''}
+                                {...field}
+                            />
                             </FormControl>
                         </FormItem>
                         )}
                     />
                   </div>
 
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="sm:mb-2 self-end sm:self-auto text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20"
-                    onClick={() => remove(index)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {!isEditing && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="sm:mb-2 self-end sm:self-auto text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20"
+                      onClick={() => remove(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               );
               })}
@@ -437,10 +455,12 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                   <FormControl>
                     <Input
                       type="text"
-                      inputMode="numeric"
+                      readOnly
+                      tabIndex={-1}
                       placeholder="0"
                       value={formatAmountForInput(field.value, amountLocale)}
-                      onChange={(e) => field.onChange(parseAmountToInteger(e.target.value))}
+                      onChange={() => {}}
+                      className="cursor-default focus:ring-0 focus:ring-offset-0"
                     />
                   </FormControl>
                   <FormMessage />
