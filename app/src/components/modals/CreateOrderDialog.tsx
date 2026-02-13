@@ -153,11 +153,11 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
             status: data.status,
             notes: data.notes,
             initiationDate: order?.initiationDate || new Date().toISOString().split('T')[0],
-            items: data.items?.map((i: any) => ({
+            items: validItems.map((i: any) => ({
                 productId: i.productId,
                 quantity: Number(i.quantity),
                 unitPrice: Number(i.unitPrice)
-            })) || [],
+            })),
             managerId,
         };
 
@@ -343,6 +343,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                   <FormField
                     control={form.control}
                     name={`items.${index}.productId`}
+                    rules={{ required: t('modals.createOrder.errors.productRequired', { defaultValue: 'Select a product' }) }}
                     render={({ field }) => (
                       <FormItem className="flex-1 w-full">
                         <FormLabel className="text-xs">{t('modals.createOrder.productLabel')}</FormLabel>
@@ -367,6 +368,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                             ))}
                           </SelectContent>
                         </Select>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -375,6 +377,13 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                     <FormField
                         control={form.control}
                         name={`items.${index}.quantity`}
+                        rules={{
+                          validate: (value) => {
+                            const qty = parseFloat(String(value)) || 0;
+                            if (qty < 1) return t('modals.createOrder.errors.qtyMin', { defaultValue: 'Min 1' });
+                            return true;
+                          },
+                        }}
                         render={({ field }) => (
                         <FormItem className="flex-1 sm:w-24">
                             <FormLabel className="text-xs">
@@ -393,6 +402,7 @@ function CreateOrderDialog({ open, onOpenChange, type, order }: CreateOrderDialo
                                 {...field} 
                             />
                             </FormControl>
+                            <FormMessage />
                         </FormItem>
                         )}
                     />
