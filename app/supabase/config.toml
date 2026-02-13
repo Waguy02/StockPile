@@ -1,0 +1,4 @@
+# Skip gateway JWT verification so the function receives the request.
+# We validate the Bearer token and manager role inside the function (getManagerFromRequest).
+[functions.server]
+verify_jwt = false

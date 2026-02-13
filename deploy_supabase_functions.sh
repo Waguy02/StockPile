@@ -1,0 +1,5 @@
+cd app
+npx supabase login
+npx supabase link --project-ref llbzxfbyuspriitmjjho
+npx supabase secrets set SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsYnp4ZmJ5dXNwcmlpdG1qamhvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDMxMTY2NSwiZXhwIjoyMDg1ODg3NjY1fQ.InODTL2PD68CxXIs-OeWpbVOCdxFn65wQ9cTdPz-Ql0"
+npx supabase functions deploy server
