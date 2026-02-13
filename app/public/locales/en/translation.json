@@ -56,6 +56,8 @@
     "awaitingDelivery": "Awaiting delivery",
     "revenueAnalytics": "Revenue Analytics",
     "comparisonSalesProcurement": "Comparison between Sales and Procurement costs",
+    "chartSalesRevenue": "Sales Revenue",
+    "chartProcurementCost": "Procurement Cost",
     "stockByCategory": "Stock by Category",
     "topSellingProducts": "Top Selling Products",
     "orderStatus": "Order Status Overview",

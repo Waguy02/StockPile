@@ -236,50 +236,58 @@ export function Finance() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex items-center justify-between group hover:shadow-lg transition-all">
-          <div>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.totalStockValue')}</p>
-            <h3 className="text-3xl font-bold text-slate-700 dark:text-slate-200 mt-1 tracking-tight tabular-nums group-hover:scale-105 transition-transform origin-left">{formatCurrency(totalStockValue)}</h3>
-          </div>
-          <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl">
-            <Package className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex items-center justify-between group hover:shadow-lg transition-all">
-          <div>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.totalRevenue')}</p>
-            <h3 className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 tracking-tight tabular-nums group-hover:scale-105 transition-transform origin-left">+{formatCurrency(totalInflow)}</h3>
-            {totalPendingPayments > 0 && (
-              <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 mt-1.5 tabular-nums">
-                {t('dashboard.pendingPayments', { count: salesWithPending.length })}: {formatCurrency(totalPendingPayments)}
-              </p>
-            )}
-          </div>
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-xl">
-            <ArrowUpRight className="w-6 h-6" />
+        <div className="flex flex-col h-full min-h-[180px] bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] hover:shadow-lg transition-all duration-300 group">
+          <div className="flex items-start justify-between flex-1 min-h-0">
+            <div>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.totalStockValue')}</p>
+              <h3 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mt-2 tracking-tight tabular-nums group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{formatCurrency(totalStockValue)}</h3>
+            </div>
+            <div className="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 group-hover:scale-110 transition-transform duration-300 shrink-0">
+              <Package className="w-6 h-6 text-slate-600 dark:text-slate-400" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex items-center justify-between group hover:shadow-lg transition-all">
-          <div>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.totalExpenses')}</p>
-            <h3 className="text-3xl font-bold text-rose-600 dark:text-rose-400 mt-1 tracking-tight tabular-nums group-hover:scale-105 transition-transform origin-left">-{formatCurrency(totalOutflow)}</h3>
-          </div>
-          <div className="p-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl">
-            <ArrowDownRight className="w-6 h-6" />
+        <div className="flex flex-col h-full min-h-[180px] bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] hover:shadow-lg transition-all duration-300 group">
+          <div className="flex items-start justify-between flex-1 min-h-0">
+            <div>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.totalRevenue')}</p>
+              <h3 className="text-4xl font-bold text-emerald-600 dark:text-emerald-400 mt-2 tracking-tight tabular-nums group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">+{formatCurrency(totalInflow)}</h3>
+              {totalPendingPayments > 0 && (
+                <p className="text-sm font-semibold text-amber-600 dark:text-amber-400 mt-1.5 tabular-nums">
+                  {t('dashboard.pendingPayments', { count: salesWithPending.length })}: {formatCurrency(totalPendingPayments)}
+                </p>
+              )}
+            </div>
+            <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 group-hover:scale-110 transition-transform duration-300 shrink-0">
+              <ArrowUpRight className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex items-center justify-between group hover:shadow-lg transition-all">
-          <div>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.netFlow')}</p>
-            <h3 className={`text-3xl font-bold mt-1 tracking-tight tabular-nums group-hover:scale-105 transition-transform origin-left ${(totalInflow - totalOutflow) >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-amber-600 dark:text-amber-400'}`}>
-              {(totalInflow - totalOutflow) >= 0 ? '+' : ''}{formatCurrency(totalInflow - totalOutflow)}
-            </h3>
+        <div className="flex flex-col h-full min-h-[180px] bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] hover:shadow-lg transition-all duration-300 group">
+          <div className="flex items-start justify-between flex-1 min-h-0">
+            <div>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.totalExpenses')}</p>
+              <h3 className="text-4xl font-bold text-rose-600 dark:text-rose-400 mt-2 tracking-tight tabular-nums group-hover:text-rose-700 dark:group-hover:text-rose-300 transition-colors">-{formatCurrency(totalOutflow)}</h3>
+            </div>
+            <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-900/20 group-hover:scale-110 transition-transform duration-300 shrink-0">
+              <ArrowDownRight className="w-6 h-6 text-rose-600 dark:text-rose-400" />
+            </div>
           </div>
-           <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl">
-            <DollarSignIcon className="w-6 h-6" />
+        </div>
+
+        <div className="flex flex-col h-full min-h-[180px] bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] hover:shadow-lg transition-all duration-300 group">
+          <div className="flex items-start justify-between flex-1 min-h-0">
+            <div>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t('finance.netFlow')}</p>
+              <h3 className={`text-4xl font-bold mt-2 tracking-tight tabular-nums transition-colors ${(totalInflow - totalOutflow) >= 0 ? 'text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300' : 'text-amber-600 dark:text-amber-400 group-hover:text-amber-700 dark:group-hover:text-amber-300'}`}>
+                {(totalInflow - totalOutflow) >= 0 ? '+' : ''}{formatCurrency(totalInflow - totalOutflow)}
+              </h3>
+            </div>
+            <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 group-hover:scale-110 transition-transform duration-300 shrink-0">
+              <DollarSignIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
           </div>
         </div>
       </div>

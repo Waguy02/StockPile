@@ -47,15 +47,24 @@ const COLORS = [
     '#f43f5e'  // Rose 500
 ];
 
-const chartData = [
-  { name: 'Jan', sales: 4000, orders: 2400 },
-  { name: 'Feb', sales: 3000, orders: 1398 },
-  { name: 'Mar', sales: 2000, orders: 9800 },
-  { name: 'Apr', sales: 2780, orders: 3908 },
-  { name: 'May', sales: 1890, orders: 4800 },
-  { name: 'Jun', sales: 2390, orders: 3800 },
-  { name: 'Jul', sales: 3490, orders: 4300 },
-];
+// Helper: build time-bucket key and label from a date, based on the selected time range
+function getTimeBucket(date: Date, timeRange: string): { key: string; label: string } {
+  if (timeRange === 'last24Hours') {
+    // Group by hour
+    const h = date.getHours();
+    return { key: `h-${String(h).padStart(2, '0')}`, label: `${String(h).padStart(2, '0')}h` };
+  }
+  if (timeRange === 'last7Days' || timeRange === 'last30Days') {
+    // Group by day
+    const d = date.toISOString().slice(0, 10); // YYYY-MM-DD
+    const label = date.toLocaleDateString('default', { day: '2-digit', month: 'short' });
+    return { key: d, label };
+  }
+  // lastTrimester, lastYear, allTime => group by month
+  const m = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+  const label = date.toLocaleDateString('default', { month: 'short', year: 'numeric' });
+  return { key: m, label };
+}
 
 export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => void }) {
   const { stockBatches, sales, purchaseOrders, payments, products, categories, customers, providers, managers, isLoading, currentUser } = useStore();
@@ -230,25 +239,78 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
     return Object.entries(statusCount).map(([name, value]) => ({ name, value }));
   }, [relevantOrders, t]);
 
-  // 4. Monthly Sales Growth
-  const monthlySalesData = useMemo(() => {
-    if (relevantSales.length === 0) return chartData; // Fallback to static if no data
+  // 4. Revenue chart data filtered by selected time range
+  const filteredChartData = useMemo(() => {
+    const now = new Date();
+    const past = new Date();
+    if (timeRange === 'last24Hours') past.setTime(now.getTime() - 24 * 60 * 60 * 1000);
+    else if (timeRange === 'last7Days') past.setDate(now.getDate() - 7);
+    else if (timeRange === 'last30Days') past.setDate(now.getDate() - 30);
+    else if (timeRange === 'lastTrimester') past.setMonth(now.getMonth() - 3);
+    else if (timeRange === 'lastYear') past.setFullYear(now.getFullYear() - 1);
+    else past.setFullYear(2000); // allTime fallback
 
-    const salesByMonth: Record<string, number> = {};
-    relevantSales.forEach(sale => {
-        const date = new Date(sale.initiationDate);
-        const month = date.toLocaleString('default', { month: 'short' });
-        salesByMonth[month] = (salesByMonth[month] || 0) + sale.totalAmount;
-    });
+    // Pre-generate all empty buckets for the full range so chart always shows full timeline
+    const buckets: Record<string, { label: string; fullLabel: string; sales: number; procurement: number }> = {};
 
-    if (Object.keys(salesByMonth).length < 2) return chartData;
+    if (timeRange === 'last24Hours') {
+      // One bucket per hour for the last 24 hours
+      for (let i = 0; i < 24; i++) {
+        const d = new Date(past.getTime() + i * 60 * 60 * 1000);
+        const h = d.getHours();
+        const key = `h-${String(h).padStart(2, '0')}`;
+        const fullLabel = d.toLocaleDateString('default', { day: '2-digit', month: 'long', year: 'numeric' }) + ` ${String(h).padStart(2, '0')}h`;
+        buckets[key] = { label: `${String(h).padStart(2, '0')}h`, fullLabel, sales: 0, procurement: 0 };
+      }
+    } else if (timeRange === 'last7Days' || timeRange === 'last30Days') {
+      // One bucket per day
+      const cursor = new Date(past);
+      cursor.setHours(0, 0, 0, 0);
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      while (cursor <= end) {
+        const key = cursor.toISOString().slice(0, 10);
+        const label = cursor.toLocaleDateString('default', { day: '2-digit', month: 'short' });
+        const fullLabel = cursor.toLocaleDateString('default', { day: '2-digit', month: 'long', year: 'numeric' });
+        buckets[key] = { label, fullLabel, sales: 0, procurement: 0 };
+        cursor.setDate(cursor.getDate() + 1);
+      }
+    } else {
+      // lastTrimester, lastYear, allTime => one bucket per month
+      const cursor = new Date(past.getFullYear(), past.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth(), 1);
+      while (cursor <= end) {
+        const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+        const label = cursor.toLocaleDateString('default', { month: 'short', year: 'numeric' });
+        const fullLabel = cursor.toLocaleDateString('default', { month: 'long', year: 'numeric' });
+        buckets[key] = { label, fullLabel, sales: 0, procurement: 0 };
+        cursor.setMonth(cursor.getMonth() + 1);
+      }
+    }
 
-    return Object.entries(salesByMonth).map(([name, sales]) => ({ 
-        name, 
-        sales,
-        orders: Math.floor(sales * 0.6) 
-    }));
-  }, [relevantSales]);
+    // Aggregate sales into pre-generated buckets
+    relevantSales
+      .filter(s => new Date(s.initiationDate) >= past)
+      .forEach(s => {
+        const { key } = getTimeBucket(new Date(s.initiationDate), timeRange);
+        if (buckets[key]) buckets[key].sales += s.totalAmount;
+      });
+
+    // Aggregate procurement costs
+    relevantOrders
+      .filter(po => new Date(po.initiationDate) >= past)
+      .forEach(po => {
+        const { key } = getTimeBucket(new Date(po.initiationDate), timeRange);
+        if (buckets[key]) buckets[key].procurement += po.totalAmount;
+      });
+
+    // Sort buckets chronologically by key
+    const sorted = Object.entries(buckets)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, v]) => ({ name: v.label, fullLabel: v.fullLabel, sales: v.sales, orders: v.procurement }));
+
+    return sorted.length > 0 ? sorted : [{ name: '-', fullLabel: '-', sales: 0, orders: 0 }];
+  }, [relevantSales, relevantOrders, timeRange]);
 
 
   if (isLoading) {
@@ -484,7 +546,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
           </div>
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={filteredChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
@@ -507,6 +569,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
                     axisLine={false} 
                     tickLine={false} 
                     tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 500}} 
+                    tickFormatter={(v: number) => v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : v >= 1_000 ? `${(v / 1_000).toFixed(0)}k` : String(v)}
                 />
                 <Tooltip 
                   contentStyle={{
@@ -517,13 +580,15 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
                       backgroundColor: 'rgba(255, 255, 255, 0.95)',
                       backdropFilter: 'blur(4px)'
                   }}
+                  labelFormatter={(_label: string, payload: any[]) => payload?.[0]?.payload?.fullLabel || _label}
+                  formatter={(value: number) => formatCurrency(value)}
                   itemStyle={{ fontSize: '13px', fontWeight: 600 }}
                   labelStyle={{ color: '#64748b', fontSize: '12px', marginBottom: '8px' }}
                 />
                 <Area 
                     type="monotone" 
                     dataKey="sales" 
-                    name="Sales Revenue"
+                    name={t('dashboard.chartSalesRevenue')}
                     stroke="#6366f1" 
                     strokeWidth={3}
                     fillOpacity={1} 
@@ -532,7 +597,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
                 <Area 
                     type="monotone" 
                     dataKey="orders" 
-                    name="Procurement Cost"
+                    name={t('dashboard.chartProcurementCost')}
                     stroke="#f59e0b" 
                     strokeWidth={3}
                     fillOpacity={1} 
@@ -801,7 +866,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (view: ViewState) => voi
             
             <div className="h-72 min-h-[18rem] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={monthlySalesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <AreaChart data={filteredChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorSalesGrow" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
